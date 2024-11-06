@@ -100,34 +100,34 @@ const OperadorPainel = () => {
       </Button>
 
       {/* Contadores de senhas por estado */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={6} sm={3}>
-          <Paper elevation={3} sx={{ p: 2, textAlign: 'center' }}>
-            <Typography variant="h6">Atendidas</Typography>
-            <Typography variant="h4">{contadores.atendidas}</Typography>
-          </Paper>
-        </Grid>
-        <Grid item xs={6} sm={3}>
-          <Paper elevation={3} sx={{ p: 2, textAlign: 'center' }}>
-            <Typography variant="h6">Em Espera</Typography>
-            <Typography variant="h4">{contadores.emEspera}</Typography>
-          </Paper>
-        </Grid>
-        <Grid item xs={6} sm={3}>
-          <Paper elevation={3} sx={{ p: 2, textAlign: 'center' }}>
-            <Typography variant="h6">Pendentes</Typography>
-            <Typography variant="h4">{contadores.pendentes}</Typography>
-          </Paper>
-        </Grid>
-        <Grid item xs={6} sm={3}>
-          <Paper elevation={3} sx={{ p: 2, textAlign: 'center' }}>
-            <Typography variant="h6">Total</Typography>
-            <Typography variant="h4">{contadores.total}</Typography>
-          </Paper>
-        </Grid>
-      </Grid>
+    <Grid container spacing={3} sx={{ mb: 3 }}>
+    <Grid item xs={6} sm={3}>
+    <Paper elevation={3} sx={{ p: 2, textAlign: 'center', minWidth: 120, minHeight: 100 }}>
+      <Typography variant="h6">Atendidas</Typography>
+      <Typography variant="h4">{contadores.atendidas}</Typography>
+    </Paper>
+    </Grid>
+    <Grid item xs={6} sm={3}>
+    <Paper elevation={3} sx={{ p: 2, textAlign: 'center', minWidth: 120, minHeight: 100 }}>
+      <Typography variant="h6">Em Espera</Typography>
+      <Typography variant="h4">{contadores.emEspera}</Typography>
+    </Paper>
+    </Grid>
+    <Grid item xs={6} sm={3}>
+    <Paper elevation={3} sx={{ p: 2, textAlign: 'center', minWidth: 120, minHeight: 100 }}>
+      <Typography variant="h6">Pendentes</Typography>
+      <Typography variant="h4">{contadores.pendentes}</Typography>
+    </Paper>
+    </Grid>
+    <Grid item xs={6} sm={3}>
+    <Paper elevation={3} sx={{ p: 2, textAlign: 'center', minWidth: 120, minHeight: 100 }}>
+      <Typography variant="h6">Total</Typography>
+      <Typography variant="h4">{contadores.total}</Typography>
+     </Paper>
+     </Grid>
+  </Grid>
 
-      {/* Lista de senhas */}
+    {/* Lista de senhas */}
       <List sx={{ width: '100%', maxWidth: 600, bgcolor: 'background.paper' }}>
         {senhas.map((senha) => (
           <React.Fragment key={senha.id}>
