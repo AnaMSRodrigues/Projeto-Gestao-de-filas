@@ -2,7 +2,6 @@ import React from 'react';
 import { Container, Grid, Typography, Box } from '@mui/material';
 import Header from './components/Header';
 import Footer from './components/Footer';
-import TirarSenha from './components/TirarSenha';
 import AgendarSenha from './components/AgendarSenha';
 
 function App() {
@@ -33,9 +32,6 @@ function App() {
         </Typography>
 
         <Grid container spacing={4} justifyContent="center">
-          <Grid item xs={12} sm={6}>
-            <TirarSenha />
-          </Grid>
           <Grid item xs={12} sm={6}>
             <AgendarSenha />
           </Grid>

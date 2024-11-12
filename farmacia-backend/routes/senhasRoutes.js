@@ -1,18 +1,54 @@
 const express = require('express');
-const db = require('../adminFirebase'); // Importa o Firestore configurado no `adminFirebase.js`
+const db = require('../firebaseAdmin'); // Importa o Firestore configurado no `adminFirebase.js`
 const router = express.Router();
+
+router.get('/senhas', async (req, res) => {
+  try {
+    const snapshot = await db.collection('senhas').get();
+    const senhas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    res.status(200).json(senhas);
+  } catch (error) {
+    console.error('Erro ao obter senhas:', error);
+    res.status(500).json({ error: 'Erro ao obter senhas' });
+  }
+});
 
 // Adicionar uma nova senha
 router.post('/senhas', async (req, res) => {
   try {
-    const { tipo } = req.body;
+    const { tipo, idUtente, idServico } = req.body;
+
+    // Verificar se todos os campos obrigatórios estão presentes
+    if (!tipo || !idUtente || !idServico) {
+      return res.status(400).json({ error: 'Os campos "tipo", "idUtente" e "idServico" são obrigatórios.' });
+    }
+
+    // Verificar se o utente existe no Firestore
+    const utenteRef = db.collection('utentes').doc(idUtente);
+    const utenteDoc = await utenteRef.get();
+    if (!utenteDoc.exists) {
+      return res.status(404).json({ error: 'Utente não encontrado.' });
+    }
+
+    // Verificar se o serviço existe no Firestore
+    const servicoRef = db.collection('servicos').doc(idServico);
+    const servicoDoc = await servicoRef.get();
+    if (!servicoDoc.exists) {
+      return res.status(404).json({ error: 'Serviço não encontrado.' });
+    }
+
+    // Criar a nova senha com todos os campos
     const novaSenha = {
       tipo,
       estado: 'em espera',
-      tentativasPendentes: 0,
       dataCriacao: new Date(),
+      idUtente,      // Referência ao ID do utente
+      idServico,     // Referência ao ID do serviço
+      tentativasPendentes: 0,
     };
-    const docRef = await db.collection('senhas').add(novaSenha); // Adiciona a senha ao Firestore
+
+    // Adicionar a nova senha ao Firestore
+    const docRef = await db.collection('senhas').add(novaSenha);
     res.status(201).json({ id: docRef.id, ...novaSenha });
   } catch (error) {
     console.error('Erro ao adicionar senha:', error);
