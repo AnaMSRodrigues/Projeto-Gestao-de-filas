@@ -23,14 +23,13 @@ const AgendarSenha = () => {
 
       // Dados a serem enviados para o backend
       const agendamentoData = {
-        tipo,
-        data: dataCompleta,
-        estado: 'em espera',  // Estado inicial
+        tipo,               // "geral" ou "prioritaria"
+        estado: 'em espera', // Estado inicial
         id_servico: idServico  // ID do serviço selecionado
       };
 
       // Requisição POST para a API
-      const response = await axios.post('http://localhost:3001/api/senhas', agendamentoData);
+      const response = await axios.post('http://localhost:3001/api/senha', agendamentoData);
       setMensagem(`Senha ${tipo} agendada com sucesso para ${data} às ${hora}.`);
       setErro('');
     } catch (error) {
@@ -103,10 +102,8 @@ const AgendarSenha = () => {
           displayEmpty
         >
           <MenuItem value="" disabled>Selecione o serviço</MenuItem>
-          <MenuItem value="servico1">Serviço 1</MenuItem>
-          <MenuItem value="servico2">Serviço 2</MenuItem>
-          <MenuItem value="servico3">Serviço 3</MenuItem>
-          {/* Adicione mais serviços conforme necessário */}
+          <MenuItem value="1">Aquisicao Medicacao</MenuItem>
+          <MenuItem value="2">Vacinacao</MenuItem>
         </Select>
       </FormControl>
 

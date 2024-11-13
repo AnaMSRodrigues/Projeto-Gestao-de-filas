@@ -1,113 +1,169 @@
 const express = require('express');
-const db = require('../firebaseAdmin'); // Importa o Firestore configurado no `adminFirebase.js`
 const router = express.Router();
 
-router.get('/senhas', async (req, res) => {
-  try {
-    const snapshot = await db.collection('senhas').get();
-    const senhas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    res.status(200).json(senhas);
-  } catch (error) {
-    console.error('Erro ao obter senhas:', error);
-    res.status(500).json({ error: 'Erro ao obter senhas' });
-  }
+const { Client } = require('pg');
+
+// Configuração da conexão PostgreSQL
+const client = new Client({
+  user: 'postgres',
+  host: 'localhost',   
+  database: 'Projeto',
+  password: '1411', 
+  port: 5432,
 });
 
-// Adicionar uma nova senha
-router.post('/senhas', async (req, res) => {
-  try {
-    const { tipo, idUtente, idServico } = req.body;
+// Conecta à BD
+client.connect();
 
-    // Verificar se todos os campos obrigatórios estão presentes
-    if (!tipo || !idUtente || !idServico) {
-      return res.status(400).json({ error: 'Os campos "tipo", "idUtente" e "idServico" são obrigatórios.' });
+// Rota para obter todas as senhas
+router.get('/senha', (req, res) => {
+  const query = 'SELECT * FROM senhas';
+
+  client.query(query, (err, result) => {
+    if (err) {
+      console.error('Erro ao executar a consulta', err.stack);
+      return res.status(500).json({ error: 'Erro ao consultar as senhas' });
     }
-
-    // Verificar se o utente existe no Firestore
-    const utenteRef = db.collection('utentes').doc(idUtente);
-    const utenteDoc = await utenteRef.get();
-    if (!utenteDoc.exists) {
-      return res.status(404).json({ error: 'Utente não encontrado.' });
-    }
-
-    // Verificar se o serviço existe no Firestore
-    const servicoRef = db.collection('servicos').doc(idServico);
-    const servicoDoc = await servicoRef.get();
-    if (!servicoDoc.exists) {
-      return res.status(404).json({ error: 'Serviço não encontrado.' });
-    }
-
-    // Criar a nova senha com todos os campos
-    const novaSenha = {
-      tipo,
-      estado: 'em espera',
-      dataCriacao: new Date(),
-      idUtente,      // Referência ao ID do utente
-      idServico,     // Referência ao ID do serviço
-      tentativasPendentes: 0,
-    };
-
-    // Adicionar a nova senha ao Firestore
-    const docRef = await db.collection('senhas').add(novaSenha);
-    res.status(201).json({ id: docRef.id, ...novaSenha });
-  } catch (error) {
-    console.error('Erro ao adicionar senha:', error);
-    res.status(500).json({ error: 'Erro ao adicionar senha' });
-  }
+    res.json(result.rows);  // Devolve as linhas encontradas no banco
+  });
 });
 
-// Obter todas as senhas
-router.get('/teste', async (req, res) => {
-  try {
-    const testeRef = db.collection('teste').doc('testeDoc');
-    await testeRef.set({ mensagem: 'Conexão bem-sucedida!' });
-    res.status(200).json({ message: 'Conexão com o Firebase Firestore bem-sucedida!' });
-  } catch (error) {
-    console.error('Erro na conexão com o Firestore:', error);
-    res.status(500).json({ error: 'Erro na conexão com o Firestore' });
-  }
+// Rota para obter uma senha específica pelo ID
+router.get('/senha/:id', (req, res) => {
+  const { id } = req.params;
+  const query = 'SELECT * FROM senha WHERE id = $1';  // Consulta SQL com um filtro pelo ID
+  const values = [id];
+
+  client.query(query, values, (err, result) => {
+    if (err) {
+      console.error('Erro ao executar a consulta', err.stack);
+      return res.status(500).json({ error: 'Erro ao consultar a senha' });
+    }
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Senha não encontrada' });
+    }
+    res.json(result.rows[0]);  // Devolve a senha encontrada
+  });
 });
 
-// Atualizar o estado de uma senha
-router.patch('/senhas/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { estado } = req.body;
-    const senhaRef = db.collection('senhas').doc(id);
+// Rota para criar uma nova senha
+router.post('/senha', (req, res) => {
+  const { tipo, estado, id_utente, id_servico } = req.body;  // Campos necessários
 
-    await senhaRef.update({ estado });
-    res.status(200).json({ message: 'Estado atualizado com sucesso' });
-  } catch (error) {
-    console.error('Erro ao atualizar estado:', error);
-    res.status(500).json({ error: 'Erro ao atualizar estado' });
+  // Verifica se todos os campos obrigatórios foram fornecidos
+  if (!tipo || !estado || !id_utente || !id_servico) {
+    return res.status(400).json({ error: 'Todos os campos são obrigatórios' });
   }
-});
 
-// Marcar uma senha como pendente e atualizar o contador de tentativas
-router.patch('/senhas/:id/pendente', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const senhaRef = db.collection('senhas').doc(id);
-    const doc = await senhaRef.get();
-
-    if (!doc.exists) {
-      return res.status(404).json({ message: 'Senha não encontrada' });
+  // Verifica se o id_utente existe
+  const verificaUtenteQuery = 'SELECT * FROM utente WHERE id_utente = $1';
+  client.query(verificaUtenteQuery, [id_utente], (err, result) => {
+    if (err) {
+      console.error('Erro ao verificar utente', err.stack);
+      return res.status(500).json({ error: 'Erro ao verificar o utente' });
+    }
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Utente não encontrado' });
     }
 
-    const senhaData = doc.data();
-    const novasTentativas = (senhaData.tentativasPendentes || 0) + 1;
-    const novoEstado = novasTentativas >= 3 ? 'cancelada' : 'pendente';
+    // Verifica se o id_servico existe
+    const verificaServicoQuery = 'SELECT * FROM servico WHERE id_servico = $1';
+    client.query(verificaServicoQuery, [id_servico], (err, result) => {
+      if (err) {
+        console.error('Erro ao verificar serviço', err.stack);
+        return res.status(500).json({ error: 'Erro ao verificar o serviço' });
+      }
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'Serviço não encontrado' });
+      }
 
-    await senhaRef.update({
-      estado: novoEstado,
-      tentativasPendentes: novasTentativas,
+      // Cria a senha
+      const query = `
+        INSERT INTO senha (tipo, estado, id_utente, id_servico) 
+        VALUES ($1, $2, $3, $4) 
+        RETURNING *;
+      `;
+      const values = [tipo, estado, id_utente, id_servico];  // Passa todos os valores para a query
+
+      client.query(query, values, (err, result) => {
+        if (err) {
+          console.error('Erro ao inserir a senha', err.stack);
+          return res.status(500).json({ error: 'Erro ao inserir a senha' });
+        }
+        res.status(201).json(result.rows[0]);  // Devolve a senha criada
+      });
     });
-
-    res.status(200).json({ message: 'Estado atualizado com sucesso', novoEstado, novasTentativas });
-  } catch (error) {
-    console.error('Erro ao atualizar senha para pendente:', error);
-    res.status(500).json({ error: 'Erro ao atualizar senha para pendente' });
-  }
+  });
 });
 
+
+// Rota para atualizar o estado de uma senha
+router.put('/senha/:id_senha', (req, res) => {
+  const { id_senha } = req.params;  // ID da senha que será atualizada
+  const { estado } = req.body;      // O novo estado (caso contrário, a lógica será automática)
+
+  // Lista dos estados válidos (não inclui "atendido" ou "em atendimento" diretamente)
+  const estadosValidos = ['em espera', 'pendente'];
+
+  // Verifica se o estado fornecido é válido
+  if (estado && !estadosValidos.includes(estado)) {
+    return res.status(400).json({ error: 'Estado inválido. Os estados válidos são: "em espera", "pendente".' });
+  }
+
+  // Verificar se a senha existe
+  const queryVerificaSenha = 'SELECT * FROM senha WHERE id_senha = $1';
+  client.query(queryVerificaSenha, [id_senha], (err, result) => {
+    if (err) {
+      console.error('Erro ao verificar a senha', err.stack);
+      return res.status(500).json({ error: 'Erro ao verificar a senha' });
+    }
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Senha não encontrada' });
+    }
+
+    //Verifica a chamada associada à senha
+    const queryVerificaChamada = 'SELECT * FROM chamada WHERE id_senha = $1';
+    client.query(queryVerificaChamada, [id_senha], (err, resultChamada) => {
+      if (err) {
+        console.error('Erro ao verificar chamadas', err.stack);
+        return res.status(500).json({ error: 'Erro ao verificar chamadas associadas à senha' });
+      }
+
+      let novoEstado = result.rows[0].estado; 
+
+      // Lógica para atualizar o estado com base nas chamadas associadas
+      if (resultChamada.rows.length > 0) {
+        const chamada = resultChamada.rows[0]; // Considerando que a senha tem apenas uma chamada associada
+
+        // Se há tanto hora_ini quanto hora_fim, a senha está "atendida"
+        if (chamada.hora_ini && chamada.hora_fim) {
+          novoEstado = 'atendido';
+        }
+        // Se há apenas hora_ini (sem hora_fim), a senha está "em atendimento"
+        else if (chamada.hora_ini && !chamada.hora_fim) {
+          novoEstado = 'em atendimento';
+        }
+      }
+
+      // Se o novo estado for diferente do estado atual, atualizar a senha
+      if (estado && estado !== novoEstado) {
+        novoEstado = estado;  // Se o estado for enviado na requisição, sobrepõe o estado calculado
+      }
+
+      // Atualiza o estado da senha
+      const queryAtualizaEstado = 'UPDATE senha SET estado = $1 WHERE id_senha = $2 RETURNING *';
+      client.query(queryAtualizaEstado, [novoEstado, id_senha], (err, result) => {
+        if (err) {
+          console.error('Erro ao atualizar o estado da senha', err.stack);
+          return res.status(500).json({ error: 'Erro ao atualizar o estado da senha' });
+        }
+
+        // Devolve a senha com o novo estado
+        res.status(200).json(result.rows[0]);
+      });
+    });
+  });
+});
+
+// Exporta as rotas
 module.exports = router;
