@@ -1,0 +1,31 @@
+.footer-container {
+    padding: 1.5rem 1rem;
+    margin-top: 2rem;
+    background-color: #1976d2; 
+    color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+  }
+  
+  .footer-container .footer-text {
+    font-size: 1rem;
+    font-weight: 400;
+  }
+  
+  .footer-container .footer-text a {
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  
+  @media (max-width: 600px) {
+    .footer-container {
+      padding: 1rem; 
+    }
+  
+    .footer-container .footer-text {
+      font-size: 0.875rem; 
+    }
+  }
+  

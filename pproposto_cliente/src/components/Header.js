@@ -1,11 +1,12 @@
 import React from 'react';
 import { AppBar, Toolbar, Typography } from '@mui/material';
+import './css/Header.css'; 
 
 const Header = () => {
   return (
-    <AppBar position="static" color="primary" align="center">
+    <AppBar position="static" className="header-container"> 
       <Toolbar>
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+        <Typography variant="h6" component="div" className="header-title"> 
           Sistema de Gestão de Senhas
         </Typography>
       </Toolbar>

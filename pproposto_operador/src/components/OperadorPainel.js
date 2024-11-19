@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Box, Button, Typography, List, ListItem, ListItemText, Divider, Grid, Paper } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 
 const OperadorPainel = () => {
   const [senhas, setSenhas] = useState([]);
@@ -11,35 +12,32 @@ const OperadorPainel = () => {
     total: 0,
   });
   const [mensagem, setMensagem] = useState('');
+  const navigate = useNavigate();
 
   // Função para carregar as senhas em espera e pendentes
   const fetchSenhas = async () => {
     try {
-      const response = await axios.get('http://localhost:3001/senhas');
+      const response = await axios.get('http://localhost:3001/senha');
       setSenhas(response.data);
       atualizarContadores(response.data);
     } catch (error) {
-      console.error('Erro ao carregar senhas:', error);
+      console.error('Erro ao carregar senha:', error);
     }
   };
 
   // Função para atualizar contadores de acordo com o estado das senhas
-  const atualizarContadores = (senhas) => {
-    const atendidas = senhas.filter((s) => s.estado === 'atendida').length;
-    const emEspera = senhas.filter((s) => s.estado === 'em espera').length;
-    const pendentes = senhas.filter((s) => s.estado === 'pendente').length;
+  const atualizarContadores = (senha) => {
+    const atendidas = senha.filter((s) => s.estado === 'atendida').length;
+    const emEspera = senha.filter((s) => s.estado === 'em espera').length;
+    const pendentes = senha.filter((s) => s.estado === 'pendente').length;
 
     setContadores({
       atendidas,
       emEspera,
       pendentes,
-      total: senhas.length,
+      total: senha.length,
     });
   };
-
-  useEffect(() => {
-    fetchSenhas();
-  }, []);
 
   // Função para chamar a próxima senha
   const handleChamarProximaSenha = async () => {
@@ -55,7 +53,7 @@ const OperadorPainel = () => {
   // Função para marcar uma senha como atendida
   const handleAtender = async (id) => {
     try {
-      await axios.patch(`http://localhost:3001/senhas/${id}/atender`);
+      await axios.patch(`http://localhost:3001/senha/${id}/atender`);
       setSenhas((prevSenhas) => prevSenhas.filter((s) => s.id !== id));
       setMensagem(`Senha ${id} marcada como atendida.`);
       fetchSenhas();
@@ -68,7 +66,7 @@ const OperadorPainel = () => {
   // Função para marcar uma senha como pendente
   const handlePendente = async (id) => {
     try {
-      await axios.patch(`http://localhost:3001/senhas/${id}/pendente`);
+      await axios.patch(`http://localhost:3001/senha/${id}/pendente`);
       setMensagem(`Senha ${id} marcada como pendente.`);
       fetchSenhas();
     } catch (error) {
@@ -76,6 +74,16 @@ const OperadorPainel = () => {
       setMensagem('Erro ao marcar a senha como pendente.');
     }
   };
+
+  // Verificação de autenticação ao carregar o componente
+  useEffect(() => {
+    const role = sessionStorage.getItem('role');
+    if (role !== 'operador') {
+      navigate('/login'); // Redireciona para o login se o usuário não for operador
+    } else {
+      fetchSenhas(); // Se o usuário for operador, carrega as senhas
+    }
+  }, [navigate]);
 
   return (
     <Box sx={{ p: 3 }}>
@@ -100,34 +108,34 @@ const OperadorPainel = () => {
       </Button>
 
       {/* Contadores de senhas por estado */}
-    <Grid container spacing={3} sx={{ mb: 3 }}>
-    <Grid item xs={6} sm={3}>
-    <Paper elevation={3} sx={{ p: 2, textAlign: 'center', minWidth: 120, minHeight: 100 }}>
-      <Typography variant="h6">Atendidas</Typography>
-      <Typography variant="h4">{contadores.atendidas}</Typography>
-    </Paper>
-    </Grid>
-    <Grid item xs={6} sm={3}>
-    <Paper elevation={3} sx={{ p: 2, textAlign: 'center', minWidth: 120, minHeight: 100 }}>
-      <Typography variant="h6">Em Espera</Typography>
-      <Typography variant="h4">{contadores.emEspera}</Typography>
-    </Paper>
-    </Grid>
-    <Grid item xs={6} sm={3}>
-    <Paper elevation={3} sx={{ p: 2, textAlign: 'center', minWidth: 120, minHeight: 100 }}>
-      <Typography variant="h6">Pendentes</Typography>
-      <Typography variant="h4">{contadores.pendentes}</Typography>
-    </Paper>
-    </Grid>
-    <Grid item xs={6} sm={3}>
-    <Paper elevation={3} sx={{ p: 2, textAlign: 'center', minWidth: 120, minHeight: 100 }}>
-      <Typography variant="h6">Total</Typography>
-      <Typography variant="h4">{contadores.total}</Typography>
-     </Paper>
-     </Grid>
-  </Grid>
+      <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Grid item xs={6} sm={3}>
+          <Paper elevation={3} sx={{ p: 2, textAlign: 'center', minWidth: 120, minHeight: 100 }}>
+            <Typography variant="h6">Atendidas</Typography>
+            <Typography variant="h4">{contadores.atendidas}</Typography>
+          </Paper>
+        </Grid>
+        <Grid item xs={6} sm={3}>
+          <Paper elevation={3} sx={{ p: 2, textAlign: 'center', minWidth: 120, minHeight: 100 }}>
+            <Typography variant="h6">Em Espera</Typography>
+            <Typography variant="h4">{contadores.emEspera}</Typography>
+          </Paper>
+        </Grid>
+        <Grid item xs={6} sm={3}>
+          <Paper elevation={3} sx={{ p: 2, textAlign: 'center', minWidth: 120, minHeight: 100 }}>
+            <Typography variant="h6">Pendentes</Typography>
+            <Typography variant="h4">{contadores.pendentes}</Typography>
+          </Paper>
+        </Grid>
+        <Grid item xs={6} sm={3}>
+          <Paper elevation={3} sx={{ p: 2, textAlign: 'center', minWidth: 120, minHeight: 100 }}>
+            <Typography variant="h6">Total</Typography>
+            <Typography variant="h4">{contadores.total}</Typography>
+          </Paper>
+        </Grid>
+      </Grid>
 
-    {/* Lista de senhas */}
+      {/* Lista de senhas */}
       <List sx={{ width: '100%', maxWidth: 600, bgcolor: 'background.paper' }}>
         {senhas.map((senha) => (
           <React.Fragment key={senha.id}>

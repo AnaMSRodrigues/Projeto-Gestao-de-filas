@@ -2,43 +2,27 @@ import React from 'react';
 import { Container, Grid, Typography, Box } from '@mui/material';
 import Header from './components/Header';
 import Footer from './components/Footer';
-import AgendarSenha from './components/AgendarSenha';
+import CriarSenha from './components/CriarSenha';
+import './App.css'; 
 
 function App() {
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: '100vh',
-      }}
-    >
-      <Header /> {/* Cabeçalho no topo da página */}
+    <Box className="app-container"> 
+      <Header /> 
 
-      <Container
-        component="main"
-        maxWidth="md"
-        sx={{
-          flexGrow: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          mt: 5,
-          mb: 3,
-        }}
-      >
-        <Typography variant="h4" align="center" gutterBottom color="textPrimary">
-          Bem-vindo ao Sistema de Gestão de Senhas da Farmácia
+      <Container component="main" maxWidth="md" className="main-container"> 
+        <Typography variant="h4" className="title" gutterBottom>
+          Bem vindo! Por favor selecione uma senha
         </Typography>
 
-        <Grid container spacing={4} justifyContent="center">
-          <Grid item xs={12} sm={6}>
-            <AgendarSenha />
+        <Grid container spacing={4} className="grid-container">
+          <Grid item xs={12} sm={6} className="grid-item">
+            <CriarSenha />
           </Grid>
         </Grid>
       </Container>
 
-      <Footer /> {/* Rodapé fixo ao final */}
+      <Footer />
     </Box>
   );
 }

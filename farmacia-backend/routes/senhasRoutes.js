@@ -15,6 +15,44 @@ const client = new Client({
 // Conecta à BD
 client.connect();
 
+// Rota para criar uma nova senha e um novo utente
+router.post('/senha', async (req, res) => {
+  const { tipo } = req.body; // Recebe o tipo de senha ("geral" ou "prioritaria")
+
+  if (!tipo) {
+    return res.status(400).json({ error: 'O tipo de senha é obrigatório' });
+  }
+
+  try {
+    // 1. Obtenha o maior id_utente atual
+    const maxIdUtenteQuery = 'SELECT COALESCE(MAX(id_utente), 0) AS max_id FROM utente';
+    const maxIdResult = await client.query(maxIdUtenteQuery);
+    const novoIdUtente = maxIdResult.rows[0].max_id + 1;
+
+    // 2. Insira o novo utente
+    const novoUtenteQuery = 'INSERT INTO utente (id_utente) VALUES ($1)';
+    await client.query(novoUtenteQuery, [novoIdUtente]);
+
+    // 3. Crie a nova senha
+    const novaSenhaQuery = `
+      INSERT INTO senha (tipo, estado, id_utente, id_servico) 
+      VALUES ($1, $2, $3, $4) 
+      RETURNING *;
+    `;
+    const valoresSenha = [tipo, 'em espera', novoIdUtente, 1]; // id_servico fixo como exemplo
+    const senhaResult = await client.query(novaSenhaQuery, valoresSenha);
+
+    // 4. Responda ao cliente com os detalhes
+    res.status(201).json({
+      message: 'Senha criada com sucesso',
+      senha: senhaResult.rows[0],
+    });
+  } catch (err) {
+    console.error('Erro ao criar a senha', err.stack);
+    res.status(500).json({ error: 'Erro ao criar a senha' });
+  }
+});
+
 // Rota para obter todas as senhas
 router.get('/senha', (req, res) => {
   const query = 'SELECT * FROM senhas';

@@ -1,0 +1,45 @@
+.criar-senha-container {
+  text-align: center;
+  margin-top: 2rem;
+  padding: 1rem;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.botao-geral, .botao-prioritaria {
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  width: 300px; 
+  padding: 15px 30px; 
+  font-size: 1.2rem; 
+  font-weight: 600; 
+  border-radius: 10px; 
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.botao-geral:hover, .botao-prioritaria:hover {
+  background-color: #1565c0;
+  transform: scale(1.05); 
+}
+
+.alert {
+  margin-top: 1.5rem;
+  font-size: 1.1rem;
+}
+
+@media (max-width: 600px) {
+  .criar-senha-container {
+    padding: 1rem; 
+  }
+
+  .botao-geral, .botao-prioritaria {
+    width: 100%; 
+    font-size: 1.1rem; 
+    padding: 12px 20px; 
+  }
+
+  .alert {
+    font-size: 1rem;
+  }
+}
