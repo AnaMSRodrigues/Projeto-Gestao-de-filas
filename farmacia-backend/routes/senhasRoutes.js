@@ -16,7 +16,7 @@ const client = new Client({
 client.connect();
 
 // Rota para criar uma nova senha e um novo utente
-router.post('/senha', async (req, res) => {
+router.post('/criasenha', async (req, res) => {
   const { tipo } = req.body; // Recebe o tipo de senha ("geral" ou "prioritaria")
 
   if (!tipo) {
@@ -55,7 +55,7 @@ router.post('/senha', async (req, res) => {
 
 // Rota para obter todas as senhas
 router.get('/senha', (req, res) => {
-  const query = 'SELECT * FROM senhas';
+  const query = 'SELECT * FROM senha';
 
   client.query(query, (err, result) => {
     if (err) {
@@ -69,7 +69,7 @@ router.get('/senha', (req, res) => {
 // Rota para obter uma senha específica pelo ID
 router.get('/senha/:id', (req, res) => {
   const { id } = req.params;
-  const query = 'SELECT * FROM senha WHERE id = $1';  // Consulta SQL com um filtro pelo ID
+  const query = 'SELECT * FROM senha WHERE id_senha = $1';  // Consulta SQL com um filtro pelo ID
   const values = [id];
 
   client.query(query, values, (err, result) => {
@@ -83,57 +83,6 @@ router.get('/senha/:id', (req, res) => {
     res.json(result.rows[0]);  // Devolve a senha encontrada
   });
 });
-
-// Rota para criar uma nova senha
-router.post('/senha', (req, res) => {
-  const { tipo, estado, id_utente, id_servico } = req.body;  // Campos necessários
-
-  // Verifica se todos os campos obrigatórios foram fornecidos
-  if (!tipo || !estado || !id_utente || !id_servico) {
-    return res.status(400).json({ error: 'Todos os campos são obrigatórios' });
-  }
-
-  // Verifica se o id_utente existe
-  const verificaUtenteQuery = 'SELECT * FROM utente WHERE id_utente = $1';
-  client.query(verificaUtenteQuery, [id_utente], (err, result) => {
-    if (err) {
-      console.error('Erro ao verificar utente', err.stack);
-      return res.status(500).json({ error: 'Erro ao verificar o utente' });
-    }
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Utente não encontrado' });
-    }
-
-    // Verifica se o id_servico existe
-    const verificaServicoQuery = 'SELECT * FROM servico WHERE id_servico = $1';
-    client.query(verificaServicoQuery, [id_servico], (err, result) => {
-      if (err) {
-        console.error('Erro ao verificar serviço', err.stack);
-        return res.status(500).json({ error: 'Erro ao verificar o serviço' });
-      }
-      if (result.rows.length === 0) {
-        return res.status(404).json({ error: 'Serviço não encontrado' });
-      }
-
-      // Cria a senha
-      const query = `
-        INSERT INTO senha (tipo, estado, id_utente, id_servico) 
-        VALUES ($1, $2, $3, $4) 
-        RETURNING *;
-      `;
-      const values = [tipo, estado, id_utente, id_servico];  // Passa todos os valores para a query
-
-      client.query(query, values, (err, result) => {
-        if (err) {
-          console.error('Erro ao inserir a senha', err.stack);
-          return res.status(500).json({ error: 'Erro ao inserir a senha' });
-        }
-        res.status(201).json(result.rows[0]);  // Devolve a senha criada
-      });
-    });
-  });
-});
-
 
 // Rota para atualizar o estado de uma senha
 router.put('/senha/:id_senha', (req, res) => {
