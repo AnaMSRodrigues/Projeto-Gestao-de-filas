@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Box, Button, Typography, List, ListItem, ListItemText, Divider, Grid, Paper } from '@mui/material';
+import { Box, Button, Typography, List, ListItem, ListItemText, Divider, Grid, Paper,} from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import './css/operadorPainel.css'; 
 
 const OperadorPainel = () => {
   const [senhas, setSenhas] = useState([]);
@@ -14,7 +15,6 @@ const OperadorPainel = () => {
   const [mensagem, setMensagem] = useState('');
   const navigate = useNavigate();
 
-  // Função para carregar as senhas em espera e pendentes
   const fetchSenhas = async () => {
     try {
       const response = await axios.get('http://localhost:3001/senha');
@@ -25,7 +25,6 @@ const OperadorPainel = () => {
     }
   };
 
-  // Função para atualizar contadores de acordo com o estado das senhas
   const atualizarContadores = (senha) => {
     const atendidas = senha.filter((s) => s.estado === 'atendida').length;
     const emEspera = senha.filter((s) => s.estado === 'em espera').length;
@@ -39,7 +38,6 @@ const OperadorPainel = () => {
     });
   };
 
-  // Função para chamar a próxima senha
   const handleChamarProximaSenha = async () => {
     const proximaSenha = senhas.find((s) => s.estado === 'em espera' || s.estado === 'pendente');
     if (proximaSenha) {
@@ -50,7 +48,6 @@ const OperadorPainel = () => {
     }
   };
 
-  // Função para marcar uma senha como atendida
   const handleAtender = async (id) => {
     try {
       await axios.patch(`http://localhost:3001/senha/${id}/atender`);
@@ -63,7 +60,6 @@ const OperadorPainel = () => {
     }
   };
 
-  // Função para marcar uma senha como pendente
   const handlePendente = async (id) => {
     try {
       await axios.patch(`http://localhost:3001/senha/${id}/pendente`);
@@ -75,68 +71,64 @@ const OperadorPainel = () => {
     }
   };
 
-  // Verificação de autenticação ao carregar o componente
   useEffect(() => {
     const role = sessionStorage.getItem('role');
     if (role !== 'operador') {
-      navigate('/login'); // Redireciona para o login se o usuário não for operador
+      navigate('/login');
     } else {
-      fetchSenhas(); // Se o usuário for operador, carrega as senhas
+      fetchSenhas();
     }
   }, [navigate]);
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box className="painel-operador">
       <Typography variant="h4" gutterBottom color="primary">
         Painel do Operador
       </Typography>
 
       {mensagem && (
-        <Typography variant="body1" color="secondary" sx={{ mb: 2 }}>
+        <Typography variant="body1" color="secondary" className="mensagem">
           {mensagem}
         </Typography>
       )}
 
-      {/* Botão para chamar a próxima senha */}
       <Button
         variant="contained"
         color="primary"
         onClick={handleChamarProximaSenha}
-        sx={{ mb: 3 }}
+        className="botao-chamar"
       >
         Chamar Próxima Senha
       </Button>
 
-      {/* Contadores de senhas por estado */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
+      <Grid container spacing={3} className="grid-container">
         <Grid item xs={6} sm={3}>
-          <Paper elevation={3} sx={{ p: 2, textAlign: 'center', minWidth: 120, minHeight: 100 }}>
+          <Paper elevation={3} className="contador-paper">
             <Typography variant="h6">Atendidas</Typography>
             <Typography variant="h4">{contadores.atendidas}</Typography>
           </Paper>
         </Grid>
         <Grid item xs={6} sm={3}>
-          <Paper elevation={3} sx={{ p: 2, textAlign: 'center', minWidth: 120, minHeight: 100 }}>
+          <Paper elevation={3} className="contador-paper">
             <Typography variant="h6">Em Espera</Typography>
             <Typography variant="h4">{contadores.emEspera}</Typography>
           </Paper>
         </Grid>
         <Grid item xs={6} sm={3}>
-          <Paper elevation={3} sx={{ p: 2, textAlign: 'center', minWidth: 120, minHeight: 100 }}>
+          <Paper elevation={3} className="contador-paper">
             <Typography variant="h6">Pendentes</Typography>
             <Typography variant="h4">{contadores.pendentes}</Typography>
           </Paper>
         </Grid>
         <Grid item xs={6} sm={3}>
-          <Paper elevation={3} sx={{ p: 2, textAlign: 'center', minWidth: 120, minHeight: 100 }}>
+          <Paper elevation={3} className="contador-paper">
             <Typography variant="h6">Total</Typography>
             <Typography variant="h4">{contadores.total}</Typography>
           </Paper>
         </Grid>
       </Grid>
 
-      {/* Lista de senhas */}
-      <List sx={{ width: '100%', maxWidth: 600, bgcolor: 'background.paper' }}>
+      <List className="lista-senhas">
         {senhas.map((senha) => (
           <React.Fragment key={senha.id}>
             <ListItem>
@@ -148,7 +140,7 @@ const OperadorPainel = () => {
                 variant="contained"
                 color="primary"
                 onClick={() => handleAtender(senha.id)}
-                sx={{ mr: 2 }}
+                className="botao-atender"
               >
                 Atender
               </Button>

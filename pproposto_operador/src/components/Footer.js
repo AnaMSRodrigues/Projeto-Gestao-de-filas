@@ -1,23 +1,13 @@
 import React from 'react';
-import { Box, Typography } from '@mui/material';
+import './css/footer.css';
 
 const Footer = () => {
   return (
-    <Box
-      component="footer"
-      sx={{
-        py: 2,
-        textAlign: 'center',
-        bgcolor: 'primary.main',
-        color: 'white',
-        mt: 'auto', // "Empurra" o footer para o final da página
-        width: '100%', // Garante que o footer ocupe a largura total
-      }}
-    >
-      <Typography variant="body2">
+    <footer className="footer">
+      <p className="footer-text">
         &copy; {new Date().getFullYear()} Farmácia. Todos os direitos reservados.
-      </Typography>
-    </Box>
+      </p>
+    </footer>
   );
 };
 

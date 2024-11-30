@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Box, TextField, Button, Typography, Alert } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-
+import './css/login.css';
 
 const Login = ({ onLogin }) => {
   const [username, setUsername] = useState('');
@@ -9,47 +9,47 @@ const Login = ({ onLogin }) => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  // Função para tratar o login
+
   const handleLogin = () => {
-    // Aqui estamos simulando a autenticação para 3 perfis diferentes
     if (username === 'operador' && password === '1234') {
-      // Salva a role do usuário na sessionStorage
       sessionStorage.setItem('role', 'operador');
-      onLogin(); // Atualiza o estado de autenticação (caso necessário)
-      navigate('./OperadorPainel.js'); // Redireciona para o painel do operador
+      sessionStorage.setItem('isAuthenticated', 'true');
+      onLogin();
+      navigate('/painel'); // Painel do operador
     } else if (username === 'gestor' && password === '1234') {
       sessionStorage.setItem('role', 'gestor');
-      onLogin(); // Atualiza o estado de autenticação
-      navigate('/GestorPainel.js'); // Redireciona para o painel do gestor
-    } else if (username === 'administrador' && password === '1234') {
-      sessionStorage.setItem('role', 'administrador');
-      onLogin(); // Atualiza o estado de autenticação
-      navigate('/AdministradorPainel.js'); // Redireciona para o painel do administrador
+      sessionStorage.setItem('isAuthenticated', 'true');
+      onLogin();
+      navigate('/painel'); // Painel do gestor
     } else {
       setError('Credenciais inválidas');
     }
   };
-
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 5 }}>
-      <Typography variant="h4" gutterBottom>Login</Typography>
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+    <Box className="login-container">
+      <Typography variant="h4" gutterBottom>
+        Login
+      </Typography>
+      {error && <Alert severity="error" className="login-alert">{error}</Alert>}
       <TextField
         label="Utilizador"
         value={username}
         onChange={(e) => setUsername(e.target.value)}
-        sx={{ mb: 2 }}
-        fullWidth
+        className="login-input"
       />
       <TextField
         label="Senha"
         type="password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        sx={{ mb: 3 }}
-        fullWidth
+        className="login-input"
       />
-      <Button variant="contained" color="primary" onClick={handleLogin}>
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={handleLogin}
+        className="login-button"
+      >
         Entrar
       </Button>
     </Box>

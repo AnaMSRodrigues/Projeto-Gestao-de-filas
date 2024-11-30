@@ -1,0 +1,33 @@
+.painel-operador {
+    padding: 24px; 
+  }
+  
+  .mensagem {
+    margin-bottom: 16px; 
+  }
+  
+  .botao-chamar {
+    margin-bottom: 24px; 
+  }
+  
+  .grid-container {
+    margin-bottom: 24px; 
+  }
+  
+  .contador-paper {
+    padding: 16px; 
+    text-align: center;
+    min-width: 120px;
+    min-height: 100px;
+  }
+  
+  .lista-senhas {
+    width: 100%;
+    max-width: 600px;
+    background-color: var(--mui-background-paper);
+  }
+  
+  .botao-atender {
+    margin-right: 16px; 
+  }
+  
