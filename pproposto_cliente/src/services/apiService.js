@@ -1,9 +1,10 @@
 import axios from 'axios';
 import API_URL from '../config/apiConfig';
 
+
 // Função para adicionar uma nova senha
 export const adicionarSenha = async (novaSenha) => {
-  const response = await axios.post(`${API_URL}/senha`, novaSenha);
+  const response = await axios.post(`${API_URL}/criasenha`, novaSenha);
   return response.data;
 };
 
@@ -15,6 +16,6 @@ export const obterSenhas = async () => {
 
 // Função para atualizar o estado de uma senha
 export const atualizarEstadoSenha = async (id, novoEstado) => {
-  const response = await axios.patch(`${API_URL}/senha/${id}`, { estado: novoEstado });
+  const response = await axios.put(`${API_URL}/senha/${id}`, { estado: novoEstado });
   return response.data;
 };

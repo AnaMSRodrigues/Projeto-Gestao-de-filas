@@ -1,84 +1,76 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Box, Button, Typography, List, ListItem, ListItemText, Divider, Grid, Paper,} from '@mui/material';
+import { Box, Button, Typography, List, ListItem, ListItemText, Divider, Grid, Paper } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import './css/operadorPainel.css'; 
+import './css/operadorPainel.css';
 
 const OperadorPainel = () => {
-  const [senhas, setSenhas] = useState([]);
+  const [senhas, setSenhas] = useState({
+    atendidas: [],
+    emEspera: [],
+    pendentes: [],
+  });
+
   const [contadores, setContadores] = useState({
     atendidas: 0,
     emEspera: 0,
     pendentes: 0,
     total: 0,
   });
+
   const [mensagem, setMensagem] = useState('');
   const navigate = useNavigate();
 
-  const fetchSenhas = async () => {
+  const fetchSenhasPorEstado = async (estado) => {
     try {
-      const response = await axios.get('http://localhost:3001/senha');
-      setSenhas(response.data);
-      atualizarContadores(response.data);
+      const response = await axios.get(`${API_URL}/senhaOP/${estado}`); // Corrigido para interpolação correta da URL
+      return response.data;
     } catch (error) {
-      console.error('Erro ao carregar senha:', error);
+      console.error(`Erro ao carregar senhas com estado "${estado}":`, error);
+      setMensagem(`Erro ao carregar senhas com estado "${estado}".`);
+      return []; // Retorna um array vazio em caso de erro
     }
+  };  
+
+  const fetchAllSenhas = async () => {
+    const estados = ['atendida', 'em espera', 'pendente'];
+    const novasSenhas = {};
+
+    for (const estado of estados) {
+      const senhasPorEstado = await fetchSenhasPorEstado(estado);
+      novasSenhas[estado] = senhasPorEstado;
+    }
+
+    setSenhas(novasSenhas);
+    atualizarContadores(novasSenhas);
   };
 
-  const atualizarContadores = (senha) => {
-    const atendidas = senha.filter((s) => s.estado === 'atendida').length;
-    const emEspera = senha.filter((s) => s.estado === 'em espera').length;
-    const pendentes = senha.filter((s) => s.estado === 'pendente').length;
+  const atualizarContadores = (novasSenhas) => {
+    const atendidas = novasSenhas.atendida ? novasSenhas.atendida.length : 0;
+    const emEspera = novasSenhas['em espera'] ? novasSenhas['em espera'].length : 0;
+    const pendentes = novasSenhas.pendente ? novasSenhas.pendente.length : 0;
 
     setContadores({
       atendidas,
       emEspera,
       pendentes,
-      total: senha.length,
+      total: atendidas + emEspera + pendentes,
     });
   };
 
-  const handleChamarProximaSenha = async () => {
-    const proximaSenha = senhas.find((s) => s.estado === 'em espera' || s.estado === 'pendente');
-    if (proximaSenha) {
-      setMensagem(`Chamar a próxima senha: ${proximaSenha.id} - ${proximaSenha.tipo}`);
-      handleAtender(proximaSenha.id);
-    } else {
-      setMensagem('Nenhuma senha em espera ou pendente.');
-    }
-  };
-
-  const handleAtender = async (id) => {
-    try {
-      await axios.patch(`http://localhost:3001/senha/${id}/atender`);
-      setSenhas((prevSenhas) => prevSenhas.filter((s) => s.id !== id));
-      setMensagem(`Senha ${id} marcada como atendida.`);
-      fetchSenhas();
-    } catch (error) {
-      console.error('Erro ao atender senha:', error);
-      setMensagem('Erro ao atender a senha.');
-    }
-  };
-
-  const handlePendente = async (id) => {
-    try {
-      await axios.patch(`http://localhost:3001/senha/${id}/pendente`);
-      setMensagem(`Senha ${id} marcada como pendente.`);
-      fetchSenhas();
-    } catch (error) {
-      console.error('Erro ao marcar senha como pendente:', error);
-      setMensagem('Erro ao marcar a senha como pendente.');
-    }
-  };
-
   useEffect(() => {
-    const role = sessionStorage.getItem('role');
-    if (role !== 'operador') {
-      navigate('/login');
-    } else {
-      fetchSenhas();
-    }
-  }, [navigate]);
+    fetchAllSenhas();
+  }, []); // Apenas carrega as senhas uma vez ao iniciar o componente
+
+  const handleAtender = (id) => {
+    console.log(`Atendendo a senha ${id}`);
+    // Aqui você pode adicionar lógica para atualizar o estado da senha no backend
+  };
+
+  const handlePendente = (id) => {
+    console.log(`Marcando a senha ${id} como "Não Compareceu"`);
+    // Aqui você pode adicionar lógica para atualizar o estado da senha no backend
+  };
 
   return (
     <Box className="painel-operador">
@@ -92,13 +84,8 @@ const OperadorPainel = () => {
         </Typography>
       )}
 
-      <Button
-        variant="contained"
-        color="primary"
-        onClick={handleChamarProximaSenha}
-        className="botao-chamar"
-      >
-        Chamar Próxima Senha
+      <Button variant="contained" color="primary" onClick={fetchAllSenhas}>
+        Atualizar Senhas
       </Button>
 
       <Grid container spacing={3} className="grid-container">
@@ -129,34 +116,97 @@ const OperadorPainel = () => {
       </Grid>
 
       <List className="lista-senhas">
-        {senhas.map((senha) => (
-          <React.Fragment key={senha.id}>
-            <ListItem>
-              <ListItemText
-                primary={`Senha ${senha.id} - ${senha.tipo.toUpperCase()}`}
-                secondary={`Estado: ${senha.estado}`}
-              />
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={() => handleAtender(senha.id)}
-                className="botao-atender"
-              >
-                Atender
-              </Button>
-              {senha.estado === 'em espera' && (
-                <Button
-                  variant="outlined"
-                  color="secondary"
-                  onClick={() => handlePendente(senha.id)}
-                >
-                  Não Compareceu
-                </Button>
-              )}
-            </ListItem>
-            <Divider />
-          </React.Fragment>
-        ))}
+        {senhas.atendidas.length > 0 && (
+          <>
+            <Typography variant="h6" gutterBottom>
+              Atendidas
+            </Typography>
+            {senhas.atendidas.map((senha) => (
+              <React.Fragment key={senha.id}>
+                <ListItem>
+                  <ListItemText
+                    primary={`Senha ${senha.id} - ${senha.tipo.toUpperCase()}`}
+                    secondary={`Estado: ${senha.estado}`}
+                  />
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={() => handleAtender(senha.id)}
+                    className="botao-atender"
+                  >
+                    Atender
+                  </Button>
+                </ListItem>
+                <Divider />
+              </React.Fragment>
+            ))}
+          </>
+        )}
+
+        {senhas['em espera'].length > 0 && (
+          <>
+            <Typography variant="h6" gutterBottom>
+              Em Espera
+            </Typography>
+            {senhas['em espera'].map((senha) => (
+              <React.Fragment key={senha.id}>
+                <ListItem>
+                  <ListItemText
+                    primary={`Senha ${senha.id} - ${senha.tipo.toUpperCase()}`}
+                    secondary={`Estado: ${senha.estado}`}
+                  />
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={() => handleAtender(senha.id)}
+                    className="botao-atender"
+                  >
+                    Atender
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    color="secondary"
+                    onClick={() => handlePendente(senha.id)}
+                  >
+                    Não Compareceu
+                  </Button>
+                </ListItem>
+                <Divider />
+              </React.Fragment>
+            ))}
+          </>
+        )}
+
+        {senhas.pendentes.length > 0 && (
+          <>
+            <Typography variant="h6" gutterBottom>
+              Pendentes
+            </Typography>
+            {senhas.pendentes.map((senha) => (
+              <React.Fragment key={senha.id}>
+                <ListItem>
+                  <ListItemText
+                    primary={`Senha ${senha.id} - ${senha.tipo.toUpperCase()}`}
+                    secondary={`Estado: ${senha.estado}`}
+                  />
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={() => handleAtender(senha.id)}
+                    className="botao-atender"
+                  >
+                    Atender
+                  </Button>
+                </ListItem>
+                <Divider />
+              </React.Fragment>
+            ))}
+          </>
+        )}
+
+        {senhas.atendidas.length === 0 && senhas['em espera'].length === 0 && senhas.pendentes.length === 0 && (
+          <Typography variant="body1">Nenhuma senha disponível</Typography>
+        )}
       </List>
     </Box>
   );

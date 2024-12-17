@@ -14,35 +14,36 @@ const client = new Client({
 
 // Conecta à BD
 client.connect();
-
-// Rota para criar uma nova senha e um novo utente
+ 
+//Metodos que articulam com o cliente 
 router.post('/criasenha', async (req, res) => {
-  const { tipo } = req.body; // Recebe o tipo de senha ("geral" ou "prioritaria")
+  const { tipo, id_servico } = req.body; // Recebe o tipo de senha e id_servico da requisição
 
-  if (!tipo) {
-    return res.status(400).json({ error: 'O tipo de senha é obrigatório' });
+  // Verifica se o tipo e id_servico foram enviados
+  if (!tipo || !id_servico) {
+    return res.status(400).json({ error: 'O tipo de senha e id_servico são obrigatórios' });
   }
 
   try {
-    // 1. Obtenha o maior id_utente atual
+    // 1. Obtém o maior id_utente atual
     const maxIdUtenteQuery = 'SELECT COALESCE(MAX(id_utente), 0) AS max_id FROM utente';
     const maxIdResult = await client.query(maxIdUtenteQuery);
     const novoIdUtente = maxIdResult.rows[0].max_id + 1;
 
-    // 2. Insira o novo utente
+    // 2. Insere o novo utente
     const novoUtenteQuery = 'INSERT INTO utente (id_utente) VALUES ($1)';
     await client.query(novoUtenteQuery, [novoIdUtente]);
 
-    // 3. Crie a nova senha
+    // 3. Cria a nova senha
     const novaSenhaQuery = `
       INSERT INTO senha (tipo, estado, id_utente, id_servico) 
       VALUES ($1, $2, $3, $4) 
       RETURNING *;
     `;
-    const valoresSenha = [tipo, 'em espera', novoIdUtente, 1]; // id_servico fixo como exemplo
+    const valoresSenha = [tipo, 'em espera', novoIdUtente, id_servico]; // Usa o id_servico recebido
     const senhaResult = await client.query(novaSenhaQuery, valoresSenha);
 
-    // 4. Responda ao cliente com os detalhes
+    // 4. Responde ao cliente com os detalhes da senha criada
     res.status(201).json({
       message: 'Senha criada com sucesso',
       senha: senhaResult.rows[0],
@@ -52,6 +53,7 @@ router.post('/criasenha', async (req, res) => {
     res.status(500).json({ error: 'Erro ao criar a senha' });
   }
 });
+
 
 // Rota para obter todas as senhas
 router.get('/senha', (req, res) => {
@@ -90,7 +92,7 @@ router.put('/senha/:id_senha', (req, res) => {
   const { estado } = req.body;      // O novo estado (caso contrário, a lógica será automática)
 
   // Lista dos estados válidos (não inclui "atendido" ou "em atendimento" diretamente)
-  const estadosValidos = ['em espera', 'pendente'];
+  const estadosValidos = ['em espera', 'pendente', 'em atendimento'];
 
   // Verifica se o estado fornecido é válido
   if (estado && !estadosValidos.includes(estado)) {
@@ -150,6 +152,72 @@ router.put('/senha/:id_senha', (req, res) => {
       });
     });
   });
+});
+
+//Metodos que articulam com o operador
+
+// Rota para pegar todas as senhas
+router.get('/senhaOP', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM senha'); // Sua tabela de senhas no banco de dados
+    res.status(200).json(result.rows); // Retorna as senhas no formato JSON
+  } catch (err) {
+    console.error('Erro ao buscar senhas:', err);
+    res.status(500).json({ error: 'Erro ao buscar senhas' });
+  }
+});
+
+// Rota para chamar uma senha específica (exemplo de uso de POST ou PATCH)
+router.patch('/senhaOP/:id/atender', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query('UPDATE senha SET estado = $1 WHERE id = $2 RETURNING *', ['atendida', id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Senha não encontrada' });
+    }
+    res.status(200).json(result.rows[0]);
+  } catch (err) {
+    console.error('Erro ao atender senha:', err);
+    res.status(500).json({ error: 'Erro ao atender a senha' });
+  }
+});
+
+router.get('/senhaOP/:estado', async (req, res) => {
+  const { estado } = req.params; // Pega o estado da senha (ex: 'em espera', 'atendida', 'pendente')
+
+  try {
+    // Consulta filtrada por estado
+    const result = await pool.query('SELECT * FROM senha WHERE estado = $1', [estado]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: `Nenhuma senha encontrada no estado: ${estado}` });
+    }
+
+    // Retorna as senhas no estado solicitado
+    res.status(200).json(result.rows);
+
+  } catch (err) {
+    console.error('Erro ao procurar senhas:', err);
+    res.status(500).json({ error: 'Erro ao procurar senhas' });
+  }
+});
+
+router.get('/senhaOP/:estado', async (req, res) => {
+  const { estado } = req.params; // Captura o parâmetro "estado" na URL
+
+  try {
+    // Consulta no banco de dados para pegar as senhas com o estado especificado
+    const result = await client.query('SELECT * FROM senha WHERE estado = $1', [estado]);
+
+    if (result.rows.length > 0) {
+      res.json(result.rows); // Retorna as senhas com o estado filtrado
+    } else {
+      res.status(404).json({ message: `Nenhuma senha encontrada com o estado "${estado}"` });
+    }
+  } catch (error) {
+    console.error('Erro ao buscar senhas por estado:', error);
+    res.status(500).json({ message: 'Erro ao buscar senhas' });
+  }
 });
 
 // Exporta as rotas
