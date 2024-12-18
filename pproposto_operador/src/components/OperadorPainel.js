@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Box, Button, Typography, List, ListItem, ListItemText, Divider, Grid, Paper } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import './css/operadorPainel.css';
+import API_URL from '../config/apiConfig';
 
 const OperadorPainel = () => {
   const [senhas, setSenhas] = useState({

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button, Alert, Box, FormControl, InputLabel, Select, MenuItem, Typography } from '@mui/material';
-import { adicionarSenha } from '../services/apiService';
+import { adicionarSenha } from '../services/apiService'; // Função que faz o POST para o servidor
 import './css/CriarSenha.css';
 
 const CriarSenha = () => {
@@ -19,8 +19,7 @@ const CriarSenha = () => {
       const novaSenha = {
         tipo,
         estado: 'em espera',
-        id_utente: Math.floor(Math.random() * 1000), 
-        id_servico: idServico, 
+        id_servico: idServico, // Pegamos diretamente o valor do state
       };
 
       const resposta = await adicionarSenha(novaSenha);
@@ -28,33 +27,13 @@ const CriarSenha = () => {
       setErro('');
     } catch (error) {
       console.error('Erro ao criar a senha:', error.response || error.message);
-      setErro('Erro ao criar a senha. Por favor, tente novamente.');
+      setErro(error.response?.data?.error || 'Erro ao criar a senha. Por favor, tente novamente.');
       setMensagem('');
     }
   };
 
   return (
     <Box className="criar-senha-container">
-      <Box className="caixa-tipo-senha">
-        <Typography variant="h5" gutterBottom>
-          Escolha o Tipo de Senha
-        </Typography>
-        <Button
-          variant="contained"
-          onClick={() => criarSenha('geral')}
-          className="botao-geral"
-        >
-          Senha Geral
-        </Button>
-
-        <Button
-          variant="contained"
-          onClick={() => criarSenha('prioritaria')}
-          className="botao-prioritaria"
-        >
-          Senha Prioritária
-        </Button>
-      </Box>
       <Box className="caixa-servico">
         <Typography variant="h5" gutterBottom>
           Escolha o Serviço
@@ -64,7 +43,7 @@ const CriarSenha = () => {
           <Select
             labelId="servico-label"
             value={idServico}
-            onChange={(e) => setIdServico(e.target.value)}
+            onChange={(e) => setIdServico(e.target.value)} // Atualiza o estado do idServico
             className="select-servico"
           >
             <MenuItem value={1}>Aquisição de medicação</MenuItem>
@@ -74,6 +53,29 @@ const CriarSenha = () => {
         </FormControl>
       </Box>
 
+      <Box className="caixa-tipo-senha">
+        <Typography variant="h5" gutterBottom>
+          Escolha o Tipo de Senha
+        </Typography>
+        <Button
+          variant="contained"
+          onClick={() => criarSenha('geral')} // Apenas passamos o tipo
+          className="botao-geral"
+          disabled={!idServico} // Desativa o botão se nenhum serviço for selecionado
+        >
+          Senha Geral
+        </Button>
+
+        <Button
+          variant="contained"
+          onClick={() => criarSenha('prioritaria')} // Apenas passamos o tipo
+          className="botao-prioritaria"
+          disabled={!idServico} // Desativa o botão se nenhum serviço for selecionado
+        >
+          Senha Prioritária
+        </Button>
+      </Box>
+
       {mensagem && <Alert severity="success" className="alert">{mensagem}</Alert>}
       {erro && <Alert severity="error" className="alert">{erro}</Alert>}
     </Box>
@@ -81,3 +83,4 @@ const CriarSenha = () => {
 };
 
 export default CriarSenha;
+

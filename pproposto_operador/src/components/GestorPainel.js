@@ -38,7 +38,7 @@ const GestorPainel = () => {
       setNovoConsumivel('');
       setMensagem('Consumível solicitado com sucesso!');
     } else {
-      setErro('Por favor, insira o nome de um consumível válido.');
+      setErro('Por favor, insira o codigo de um consumível válido.');
     }
   };
   // Função para fazer upload de um ficheiro CSV

@@ -4,7 +4,7 @@ import API_URL from '../config/apiConfig';
 
 // Função para adicionar uma nova senha
 export const adicionarSenha = async (novaSenha) => {
-  const response = await axios.post(`${API_URL}/criasenha`, novaSenha)
+  const response = await axios.post(`${API_URL}/criasenha`, novaSenha);
   return response.data;
 };
 

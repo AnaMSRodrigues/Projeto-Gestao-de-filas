@@ -15,7 +15,38 @@ const client = new Client({
 // Conecta à BD
 client.connect();
  
-//Metodos que articulam com o cliente 
+/////////////////////////////////////////////////ARTICULACAO CLIENTE 
+// Rota para obter todas as senhas
+router.get('/senha', (req, res) => {
+  const query = 'SELECT * FROM senha';
+
+  client.query(query, (err, result) => {
+    if (err) {
+      console.error('Erro ao executar a consulta', err.stack);
+      return res.status(500).json({ error: 'Erro ao consultar as senhas' });
+    }
+    res.json(result.rows);  // Devolve as linhas encontradas no banco
+  });
+});
+
+// Rota para obter uma senha específica pelo ID
+router.get('/senha/:id', (req, res) => {
+  const { id } = req.params;
+  const query = 'SELECT * FROM senha WHERE id_senha = $1';  // Consulta SQL com um filtro pelo ID
+  const values = [id];
+
+  client.query(query, values, (err, result) => {
+    if (err) {
+      console.error('Erro ao executar a consulta', err.stack);
+      return res.status(500).json({ error: 'Erro ao consultar a senha' });
+    }
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Senha não encontrada' });
+    }
+    res.json(result.rows[0]);  // Devolve a senha encontrada
+  });
+});
+
 router.post('/criasenha', async (req, res) => {
   const { tipo, id_servico } = req.body; // Recebe o tipo de senha e id_servico da requisição
 
@@ -52,38 +83,6 @@ router.post('/criasenha', async (req, res) => {
     console.error('Erro ao criar a senha', err.stack);
     res.status(500).json({ error: 'Erro ao criar a senha' });
   }
-});
-
-
-// Rota para obter todas as senhas
-router.get('/senha', (req, res) => {
-  const query = 'SELECT * FROM senha';
-
-  client.query(query, (err, result) => {
-    if (err) {
-      console.error('Erro ao executar a consulta', err.stack);
-      return res.status(500).json({ error: 'Erro ao consultar as senhas' });
-    }
-    res.json(result.rows);  // Devolve as linhas encontradas no banco
-  });
-});
-
-// Rota para obter uma senha específica pelo ID
-router.get('/senha/:id', (req, res) => {
-  const { id } = req.params;
-  const query = 'SELECT * FROM senha WHERE id_senha = $1';  // Consulta SQL com um filtro pelo ID
-  const values = [id];
-
-  client.query(query, values, (err, result) => {
-    if (err) {
-      console.error('Erro ao executar a consulta', err.stack);
-      return res.status(500).json({ error: 'Erro ao consultar a senha' });
-    }
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Senha não encontrada' });
-    }
-    res.json(result.rows[0]);  // Devolve a senha encontrada
-  });
 });
 
 // Rota para atualizar o estado de uma senha
@@ -154,31 +153,27 @@ router.put('/senha/:id_senha', (req, res) => {
   });
 });
 
-//Metodos que articulam com o operador
+///////////////////////////////////////////////////////ARTICULACAO OPERADOR 
 
-// Rota para pegar todas as senhas
-router.get('/senhaOP', async (req, res) => {
+//Metodo que organiza as senhas por estado , data e hora 
+router.get('/senhaOPordena', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM senha'); // Sua tabela de senhas no banco de dados
-    res.status(200).json(result.rows); // Retorna as senhas no formato JSON
+    // Consulta SQL para filtrar por estado "em espera", ordenar por prioridade e data
+    const result = await client.query(`
+      SELECT * FROM senha
+      WHERE estado = 'em espera'  
+      ORDER BY 
+        CASE 
+          WHEN tipo = 'prioritaria' THEN 1
+          WHEN tipo = 'geral' THEN 2
+          ELSE 3 
+        END,
+        data_senha ASC  
+    `); 
+    res.status(200).json(result.rows); // Retorna as senhas filtradas e ordenadas
   } catch (err) {
-    console.error('Erro ao buscar senhas:', err);
-    res.status(500).json({ error: 'Erro ao buscar senhas' });
-  }
-});
-
-// Rota para chamar uma senha específica (exemplo de uso de POST ou PATCH)
-router.patch('/senhaOP/:id/atender', async (req, res) => {
-  const { id } = req.params;
-  try {
-    const result = await pool.query('UPDATE senha SET estado = $1 WHERE id = $2 RETURNING *', ['atendida', id]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: 'Senha não encontrada' });
-    }
-    res.status(200).json(result.rows[0]);
-  } catch (err) {
-    console.error('Erro ao atender senha:', err);
-    res.status(500).json({ error: 'Erro ao atender a senha' });
+    console.error('Erro ao procurar senhas:', err.stack);
+    res.status(500).json({ error: 'Erro ao procurar senhas', message: err.message });
   }
 });
 
@@ -202,23 +197,38 @@ router.get('/senhaOP/:estado', async (req, res) => {
   }
 });
 
-router.get('/senhaOP/:estado', async (req, res) => {
-  const { estado } = req.params; // Captura o parâmetro "estado" na URL
-
+// Rota para chamar uma senha específica (exemplo de uso de POST ou PATCH)
+router.post('/senhaOP/:id/atender', async (req, res) => {
+  const { id } = req.params;
   try {
-    // Consulta no banco de dados para pegar as senhas com o estado especificado
-    const result = await client.query('SELECT * FROM senha WHERE estado = $1', [estado]);
-
-    if (result.rows.length > 0) {
-      res.json(result.rows); // Retorna as senhas com o estado filtrado
-    } else {
-      res.status(404).json({ message: `Nenhuma senha encontrada com o estado "${estado}"` });
+    const result = await pool.query('UPDATE senha SET estado = $1 WHERE id = $2 RETURNING *', ['atendida', id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Senha não encontrada' });
     }
-  } catch (error) {
-    console.error('Erro ao buscar senhas por estado:', error);
-    res.status(500).json({ message: 'Erro ao buscar senhas' });
+    res.status(200).json(result.rows[0]);
+  } catch (err) {
+    console.error('Erro ao atender senha:', err);
+    res.status(500).json({ error: 'Erro ao atender a senha' });
+  }
+});
+
+router.delete('/deleteSenha/:id', async (req, res) => {
+  const { id } = req.params; // Captura o ID da URL
+  try {
+    // Executa a query de exclusão
+    const result = await client.query('DELETE FROM senha WHERE id = $1', [id]);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Senha não encontrada' });
+    }
+
+    res.status(200).json({ message: 'Senha eliminada com sucesso' });
+  } catch (err) {
+    console.error('Erro ao eliminar senha:', err.stack);
+    res.status(500).json({ error: 'Erro ao eliminar senha', message: err.message });
   }
 });
 
 // Exporta as rotas
 module.exports = router;
+
