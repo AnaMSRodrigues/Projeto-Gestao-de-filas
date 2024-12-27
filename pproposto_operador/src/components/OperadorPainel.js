@@ -24,32 +24,34 @@ const OperadorPainel = () => {
 
   const fetchSenhasPorEstado = async (estado) => {
     try {
-      const response = await axios.get(`${API_URL}/senhaOP/${estado}`); // Corrigido para interpolação correta da URL
-      return response.data;
+      // Aqui fazemos a requisição para o backend, usando o estado para a consulta filtrada
+      const response = await axios.get(`${API_URL}/senhaOP/${estado}`);
+      return response.data; // Retorna os dados recebidos do backend
     } catch (error) {
       console.error(`Erro ao carregar senhas com estado "${estado}":`, error);
       setMensagem(`Erro ao carregar senhas com estado "${estado}".`);
       return []; // Retorna um array vazio em caso de erro
     }
-  };  
-
+  };
+  
   const fetchAllSenhas = async () => {
-    const estados = ['atendida', 'em espera', 'pendente'];
+    const estados = ['atendida', 'em espera', 'pendente', 'em atendimento'];
     const novasSenhas = {};
-
+  
     for (const estado of estados) {
-      const senhasPorEstado = await fetchSenhasPorEstado(estado);
+      const senhasPorEstado = await fetchSenhasPorEstado(estado); // Requisição filtrada por estado
       novasSenhas[estado] = senhasPorEstado;
     }
-
-    setSenhas(novasSenhas);
-    atualizarContadores(novasSenhas);
+  
+    setSenhas(novasSenhas); // Atualiza o estado com as senhas filtradas
+    atualizarContadores(novasSenhas); // Atualiza os contadores com os dados
   };
+  
 
   const atualizarContadores = (novasSenhas) => {
-    const atendidas = novasSenhas.atendida ? novasSenhas.atendida.length : 0;
-    const emEspera = novasSenhas['em espera'] ? novasSenhas['em espera'].length : 0;
-    const pendentes = novasSenhas.pendente ? novasSenhas.pendente.length : 0;
+    const atendidas = novasSenhas.atendidas ? novasSenhas.atendidas.length : 0;
+    const emEspera = novasSenhas.emEspera ? novasSenhas.emEspera.length : 0;
+    const pendentes = novasSenhas.pendentes ? novasSenhas.pendentes.length : 0;
 
     setContadores({
       atendidas,
@@ -63,9 +65,20 @@ const OperadorPainel = () => {
     fetchAllSenhas();
   }, []); // Apenas carrega as senhas uma vez ao iniciar o componente
 
-  const handleAtender = (id) => {
-    console.log(`Atendendo a senha ${id}`);
-    // Aqui você pode adicionar lógica para atualizar o estado da senha no backend
+  const handleAtender = async (id) => {
+    try {
+      const response = await axios.post(`${API_URL}/senhaOP/${id}/atender`);
+
+      if (response.status === 200) {
+        setMensagem(`Senha ${id} atendida com sucesso.`);
+        fetchAllSenhas(); // Atualiza as senhas no painel após atendimento
+      } else {
+        setMensagem('Erro ao atender a senha.');
+      }
+    } catch (error) {
+      console.error('Erro ao atender a senha:', error);
+      setMensagem('Erro ao atender a senha.');
+    }
   };
 
   const handlePendente = (id) => {
@@ -144,12 +157,12 @@ const OperadorPainel = () => {
           </>
         )}
 
-        {senhas['em espera'].length > 0 && (
+        {senhas.emEspera.length > 0 && (
           <>
             <Typography variant="h6" gutterBottom>
               Em Espera
             </Typography>
-            {senhas['em espera'].map((senha) => (
+            {senhas.emEspera.map((senha) => (
               <React.Fragment key={senha.id}>
                 <ListItem>
                   <ListItemText
@@ -159,7 +172,7 @@ const OperadorPainel = () => {
                   <Button
                     variant="contained"
                     color="primary"
-                    onClick={() => handleAtender(senha.id)}
+                    onClick={() => handleAtender(senha.id)} // Passa o id da senha para o handleAtender
                     className="botao-atender"
                   >
                     Atender
@@ -205,7 +218,7 @@ const OperadorPainel = () => {
           </>
         )}
 
-        {senhas.atendidas.length === 0 && senhas['em espera'].length === 0 && senhas.pendentes.length === 0 && (
+        {senhas.atendidas.length === 0 && senhas.emEspera.length === 0 && senhas.pendentes.length === 0 && (
           <Typography variant="body1">Nenhuma senha disponível</Typography>
         )}
       </List>
@@ -214,3 +227,4 @@ const OperadorPainel = () => {
 };
 
 export default OperadorPainel;
+

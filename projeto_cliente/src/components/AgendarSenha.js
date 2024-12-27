@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button, Alert, Box, FormControl, InputLabel, Select, MenuItem, Typography, TextField } from '@mui/material';
-import { adicionarSenha } from '../services/apiService';
+import { adicionarSenhaAgendada, verificarReceita } from '../services/apiService'; // Importa as funções da API
 import './css/AgendarSenha.css';
 
 const AgendarSenha = () => {
@@ -8,53 +8,78 @@ const AgendarSenha = () => {
   const [erro, setErro] = useState('');
   const [idServico, setIdServico] = useState('');
   const [numeroReceita, setNumeroReceita] = useState('');
-  const [codigoAcesso, setCodigoAcesso] = useState('');
   const [pinOpcao, setPinOpcao] = useState('');
+  const [pinAcesso, setPinAcesso] = useState('');
+  const [codigoGerado, setCodigoGerado] = useState(''); // Código de acesso gerado
 
-  const criarSenha = async (tipo) => {
+  // Função para gerar o código de acesso de 6 dígitos
+  const gerarCodigoAcesso = () => {
+    const codigo = Math.floor(100000 + Math.random() * 900000); // Gera um código de 6 dígitos
+    setCodigoGerado(codigo);
+    return codigo;
+  };
+
+  // Função para verificar os parametros inseridos na receita antes de criar a senha
+  const verificarEAdicionarSenha = async (tipo) => {
     try {
+      // Validações de campos
       if (!idServico) {
         setErro('Por favor, selecione um serviço antes de criar a senha.');
-        setMensagem('');
         return;
       }
 
-      if (!numeroReceita.match(/^\d{19}$/)) {
-        setErro('O número de receita deve ter 19 dígitos.');
-        setMensagem('');
+      if (numeroReceita.length !== 19) {
+        setErro('O número de receita deve ter exatamente 19 dígitos.');
         return;
       }
 
-      if (!codigoAcesso.match(/^\d{6}$/)) {
-        setErro('O código de acesso deve ter 6 dígitos.');
-        setMensagem('');
+      if (pinAcesso.length !== 6) {
+        setErro('O PIN de acesso deve ter exatamente 6 dígitos.');
         return;
       }
 
-      if (!pinOpcao.match(/^\d{4}$/)) {
-        setErro('O PIN de opção deve ter 4 dígitos.');
-        setMensagem('');
+      if (pinOpcao.length !== 4) {
+        setErro('O PIN de opção deve ter exatamente 4 dígitos.');
         return;
       }
 
-      const novaSenha = {
-        tipo,
-        estado: 'em espera',
-        id_utente: Math.floor(Math.random() * 1000), 
-        id_servico: idServico, 
-        numero_receita: numeroReceita,
-        codigo_acesso: codigoAcesso,
+      // Verificar se a receita existe no sistema e guarda-a
+      const respostaReceita = await verificarReceita({
+        n_receita: numeroReceita,
+        pin_acesso: pinAcesso,
         pin_opcao: pinOpcao
+      });
+
+      if (!respostaReceita || !respostaReceita.sucesso) {
+        setErro('Receita não encontrada ou os PINs estão incorretos.');
+        return;
+      }
+
+      // Gera o código de acesso para a nova senha
+      const novoCodigoAcesso = gerarCodigoAcesso();
+
+      // Objeto da nova senha que será enviado para a API
+      const novaSenhaAgendada = {
+        tipo, // Tipo de senha (geral ou prioritária)
+        estado: 'pausado',
+        id_servico: idServico, // ID do serviço selecionado
+        codigo_acesso: novoCodigoAcesso // Código de acesso gerado
       };
 
-      const resposta = await adicionarSenha(novaSenha);
-      setMensagem(`Senha criada com sucesso: ${resposta.senha.id_senha}`);
+      // Envia a senha para o backend, mas não precisa da resposta
+      await adicionarSenhaAgendada(novaSenhaAgendada);
+      
+      // Se a senha for criada com sucesso
+      setMensagem(`Senha criada com sucesso. Código de acesso: ${novoCodigoAcesso}`);
       setErro('');
+      setCodigoGerado(novoCodigoAcesso); // Exibe o código gerado na tela
+
+      // Limpa os campos de entrada
       setNumeroReceita('');
-      setCodigoAcesso('');
       setPinOpcao('');
+      setPinAcesso('');
     } catch (error) {
-      console.error('Erro ao criar a senha:', error.response || error.message);
+      console.error('Erro ao criar a senha:', error);
       setErro('Erro ao criar a senha. Por favor, tente novamente.');
       setMensagem('');
     }
@@ -64,28 +89,41 @@ const AgendarSenha = () => {
     <Box className="criar-senha-container">
       <Box className="caixa-tipo-senha">
         <Typography variant="h5" gutterBottom>
-          Escolha o Tipo de Senha
+          Selecione o tipo de senha
         </Typography>
+
         <Button
           variant="contained"
-          onClick={() => criarSenha('geral')}
+          onClick={() => verificarEAdicionarSenha('geral')}
           className="botao-geral"
+          disabled={!idServico}
         >
           Senha Geral
         </Button>
 
         <Button
           variant="contained"
-          onClick={() => criarSenha('prioritaria')}
+          onClick={() => verificarEAdicionarSenha('prioritaria')}
           className="botao-prioritaria"
+          disabled={!idServico}
         >
           Senha Prioritária
         </Button>
       </Box>
+
+      {codigoGerado && (
+        <Box className="codigo-gerado">
+          <Typography variant="h6" gutterBottom>
+            Código de Acesso Gerado: <strong>{codigoGerado}</strong>
+          </Typography>
+        </Box>
+      )}
+
       <Box className="caixa-servico">
         <Typography variant="h5" gutterBottom>
           Escolha o Serviço
         </Typography>
+
         <FormControl fullWidth className="form-control">
           <InputLabel id="servico-label">Selecione o Serviço</InputLabel>
           <Select
@@ -96,15 +134,8 @@ const AgendarSenha = () => {
           >
             <MenuItem value={1}>Aquisição de medicação</MenuItem>
             <MenuItem value={2}>Vacinação</MenuItem>
-            <MenuItem value={3}>Atendimento agendado</MenuItem>
           </Select>
         </FormControl>
-      </Box>
-
-      <Box className="caixa-receita">
-        <Typography variant="h5" gutterBottom>
-          Introduza os Códigos de Receita
-        </Typography>
 
         <TextField 
           label="Número de Receita (19 dígitos)" 
@@ -116,9 +147,9 @@ const AgendarSenha = () => {
         />
 
         <TextField 
-          label="Código de Acesso (6 dígitos)" 
-          value={codigoAcesso} 
-          onChange={(e) => setCodigoAcesso(e.target.value)} 
+          label="Pin de Acesso(6 dígitos)" 
+          value={pinAcesso} 
+          onChange={(e) => setPinAcesso(e.target.value)} 
           fullWidth 
           margin="normal" 
           inputProps={{ maxLength: 6 }} 
@@ -141,3 +172,4 @@ const AgendarSenha = () => {
 };
 
 export default AgendarSenha;
+
