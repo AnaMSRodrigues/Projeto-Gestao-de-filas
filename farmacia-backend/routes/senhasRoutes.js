@@ -218,7 +218,7 @@ router.get('/senhaOPordena', async (req, res) => {
 router.get('/senhaOP/:estado', async (req, res) => {
   const { estado } = req.params;
   try {
-    const result = await pool.query('SELECT * FROM senha WHERE estado = $1', [estado]);
+    const result = await client.query('SELECT * FROM senha WHERE estado = $1', [estado]);
     
     if (result.rows.length === 0) {
       return res.status(404).json({ message: `Nenhuma senha encontrada no estado: ${estado}` });
@@ -230,24 +230,6 @@ router.get('/senhaOP/:estado', async (req, res) => {
     res.status(500).json({ error: 'Erro ao procurar senhas' });
   }
 });
-
-router.get('/senhaCod/:codigoAcesso', async (req, res) => {
-    const { codigo_acesso } = req.body;
-  
-    try {
-      // Verificar se o código de acesso está associado a uma senha
-      const senha = await Senha.findOne({ where: { codigo_acesso, estado: 'em espera' } });
-  
-      if (senha) {
-        return res.status(200).json({ mensagem: 'Senha encontrada com sucesso.', senha });
-      } else {
-        return res.status(404).json({ error: 'Código de acesso não encontrado ou já foi utilizado.' });
-      }
-    } catch (error) {
-      console.error('Erro ao buscar a senha pelo código de acesso:', error);
-      res.status(500).json({ error: 'Erro ao buscar a senha. Tente novamente mais tarde.' });
-    }
-  });
 
 // Rota para chamar uma senha específica
 router.post('/senhaOP/:id/atender', async (req, res) => {
@@ -264,8 +246,7 @@ router.post('/senhaOP/:id/atender', async (req, res) => {
   }
 });
 
-// Método para chamar a primeira senha da lista ordenada e registrar a chamada
-router.post('/chamarPrimeiraSenha', async (req, res) => {
+router.get('/chamarPrimeiraSenha', async (req, res) => {
   try {
     // 1. Consulta para obter a primeira senha "em espera" ordenada
     const result = await client.query(`
@@ -294,12 +275,12 @@ router.post('/chamarPrimeiraSenha', async (req, res) => {
     // 3. Registra a chamada (hora_ini é o timestamp atual, hora_fim será NULL por enquanto)
     const horaIni = new Date().toISOString(); // Hora atual em formato timestamp ISO
     const idOperador = 1;  // Colocando 1 como id_operador, conforme solicitado
-    const atendimento = 'Atendimento iniciado'; // Pode ser ajustado conforme o seu sistema de atendimento
+    const atendimento = '1'; // Pode ser ajustado conforme o seu sistema de atendimento
 
     const queryChamada = `
       INSERT INTO chamada (hora_ini, hora_fim, atendimento, id_senha, id_operador)
       VALUES ($1, NULL, $2, $3, $4)
-      RETURNING *;
+      RETURNING id_chamada, hora_ini, hora_fim, atendimento, id_senha, id_operador;
     `;
 
     const chamadaResult = await client.query(queryChamada, [horaIni, atendimento, idSenha, idOperador]);
@@ -308,7 +289,7 @@ router.post('/chamarPrimeiraSenha', async (req, res) => {
     res.status(201).json({
       message: 'Senha chamada com sucesso',
       senha: result.rows[0],  // Detalhes da senha que foi chamada
-      chamada: chamadaResult.rows[0],  // Detalhes da chamada registrada
+      chamada: chamadaResult.rows[0],  // Detalhes da chamada registrada, incluindo id_chamada
     });
   } catch (err) {
     console.error('Erro ao chamar a primeira senha:', err.stack);
@@ -316,8 +297,12 @@ router.post('/chamarPrimeiraSenha', async (req, res) => {
   }
 });
 
+
 router.post('/insereReceita', async (req, res) => {
   const { n_receita, pin_acesso, pin_opcao } = req.body;
+  const n_receitaInt = Number(n_receita);
+  const pin_acessoInt = Number(pin_acesso);
+  const pin_opcaoInt = Number(pin_opcao);
 
   if (!/^\d{19}$/.test(n_receita) || !/^\d{6}$/.test(pin_acesso) || !/^\d{4}$/.test(pin_opcao)) {
     return res.status(400).json({ sucesso: false, erro: 'Parâmetros inválidos.' });
@@ -330,7 +315,7 @@ router.post('/insereReceita', async (req, res) => {
       RETURNING *;
     `;
 
-    const chamadaResult = await client.query(query, [n_receita, pin_acesso, pin_opcao]);
+    const chamadaResult = await client.query(query, [n_receitaInt, pin_acessoInt, pin_opcaoInt]);
 
     res.status(201).json({
       sucesso: true,
@@ -363,6 +348,38 @@ router.delete('/deleteSenha/:id', async (req, res) => {
   }
 });
 
+// Rota para alterar o estado de "pausado" para "em espera"
+router.post('/alteraEstadoSenha/:codigo', async (req, res) => {
+  const { codigo } = req.params; // Recebe o ID da senha do corpo da requisição
+
+  if (!codigo) {
+    return res.status(400).json({ error: 'O Codigo da senha é obrigatório.' });
+  }
+
+  try {
+    // Atualiza o estado da senha para "em espera" apenas se ela estiver "pausado"
+    const updateResult = await client.query(
+      `UPDATE senha 
+       SET estado = $1 
+       WHERE codigo_acesso = $2 AND estado = $3 
+       RETURNING *;`,
+      ['em espera', codigo, 'pausado']
+    );
+
+    if (updateResult.rowCount === 0) {
+      return res.status(404).json({ error: 'Senha não encontrada ou estado inválido.' });
+    }
+
+    // Retorna a senha atualizada
+    res.status(200).json({
+      message: 'Estado da senha atualizado com sucesso.',
+      senha: updateResult.rows[0],
+    });
+  } catch (error) {
+    console.error('Erro ao atualizar o estado da senha:', error.stack);
+    res.status(500).json({ error: 'Erro ao atualizar o estado da senha.' });
+  }
+});
 
 // Exporta as rotas
 module.exports = router;

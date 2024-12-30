@@ -1,33 +1,57 @@
 .painel-operador {
-    padding: 24px; 
-  }
-  
-  .mensagem {
-    margin-bottom: 16px; 
-  }
-  
-  .botao-chamar {
-    margin-bottom: 24px; 
-  }
-  
-  .grid-container {
-    margin-bottom: 24px; 
-  }
-  
-  .contador-paper {
-    padding: 16px; 
-    text-align: center;
-    min-width: 120px;
-    min-height: 100px;
-  }
-  
-  .lista-senhas {
-    width: 100%;
-    max-width: 600px;
-    background-color: var(--mui-background-paper);
-  }
-  
-  .botao-atender {
-    margin-right: 16px; 
-  }
-  
+  padding: 24px; 
+}
+
+.mensagem {
+  margin-bottom: 16px; 
+}
+
+.botao-chamar {
+  margin-bottom: 24px; 
+  margin-top: 16px; /* Ajuste para o botão de chamar primeira senha */
+  display: inline-block; /* Certifica-se de que o botão é exibido corretamente */
+}
+
+.grid-container {
+  margin-bottom: 24px; 
+  display: flex;
+  flex-wrap: wrap; /* Permite que os itens quebrem para uma nova linha, caso necessário */
+  justify-content: space-between;
+}
+
+.contador-paper {
+  padding: 16px; 
+  text-align: center;
+  min-width: 120px;
+  min-height: 100px;
+}
+
+.lista-senhas {
+  width: 100%;
+  max-width: 600px;
+  background-color: var(--mui-background-paper);
+}
+
+.botao-atender {
+  margin-right: 16px; 
+  margin-top: 8px; /* Adicionando um pouco de espaçamento superior */
+  display: inline-block; /* Certifica-se de que o botão é exibido corretamente */
+  min-width: 120px; /* Garantir que os botões tenham largura suficiente */
+}
+
+.botao-pendente {
+  margin-left: 8px;
+  margin-top: 8px;
+  display: inline-block; /* Certifica-se de que o botão é exibido corretamente */
+  min-width: 120px;
+}
+
+.botao-atender, .botao-pendente, .botao-chamar {
+  min-width: 120px; /* Garantir que todos os botões tenham largura suficiente */
+}
+
+.botao-atender, .botao-pendente {
+  display: block; /* Faz os botões se exibirem em uma nova linha, se necessário */
+  margin: 8px auto; /* Centraliza os botões */
+  width: 100%; /* Se necessário, fazer com que os botões ocupem toda a largura disponível */
+}

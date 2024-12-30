@@ -15,7 +15,7 @@ export const obterSenhas = async () => {
 };
 
 // Função para atualizar o estado de uma senha
-export const atualizarEstadoSenha = async (id, novoEstado) => {
-  const response = await axios.put(`${API_URL}/senha/${id}`, { estado: novoEstado });
+export const atualizarEstadoSenhaAuto = async (codigo) => {
+  const response = await axios.post(`${API_URL}/alteraEstadoSenha/${codigo}`);
   return response.data;
 };

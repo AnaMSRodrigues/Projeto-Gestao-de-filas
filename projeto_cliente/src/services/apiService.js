@@ -41,7 +41,7 @@ export const verificarCodigoAcesso = async (codigoAcesso) => {
 
 export const verificarReceita = async ({ n_receita, pin_acesso, pin_opcao }) => {
   try {
-    const resposta = await axios.post('/insereReceita', {
+    const resposta = await axios.post(`${API_URL}/insereReceita`, {
       n_receita,
       pin_acesso,
       pin_opcao

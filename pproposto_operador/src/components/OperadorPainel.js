@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Box, Button, Typography, List, ListItem, ListItemText, Divider, Grid, Paper } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
 import './css/operadorPainel.css';
 import API_URL from '../config/apiConfig';
+import {chamarPrimeiraSenha} from '../services/apiService';
 
 const OperadorPainel = () => {
   const [senhas, setSenhas] = useState({
@@ -20,7 +20,7 @@ const OperadorPainel = () => {
   });
 
   const [mensagem, setMensagem] = useState('');
-  const navigate = useNavigate();
+  
 
   const fetchSenhasPorEstado = async (estado) => {
     try {
@@ -35,23 +35,23 @@ const OperadorPainel = () => {
   };
   
   const fetchAllSenhas = async () => {
-    const estados = ['atendida', 'em espera', 'pendente', 'em atendimento'];
+    const estados = ['atendida', 'em espera', 'pendente'];
     const novasSenhas = {};
-  
+    
     for (const estado of estados) {
       const senhasPorEstado = await fetchSenhasPorEstado(estado); // Requisição filtrada por estado
       novasSenhas[estado] = senhasPorEstado;
     }
-  
+    console.log('Senhas:', novasSenhas);
     setSenhas(novasSenhas); // Atualiza o estado com as senhas filtradas
     atualizarContadores(novasSenhas); // Atualiza os contadores com os dados
   };
   
 
   const atualizarContadores = (novasSenhas) => {
-    const atendidas = novasSenhas.atendidas ? novasSenhas.atendidas.length : 0;
-    const emEspera = novasSenhas.emEspera ? novasSenhas.emEspera.length : 0;
-    const pendentes = novasSenhas.pendentes ? novasSenhas.pendentes.length : 0;
+    const atendidas = novasSenhas['atendida'] ? novasSenhas['atendida'].length : 0;
+    const emEspera = novasSenhas['em espera'] ? novasSenhas['em espera'].length : 0;
+    const pendentes = novasSenhas['pendente'] ? novasSenhas['pendente'].length : 0;
 
     setContadores({
       atendidas,
@@ -64,22 +64,6 @@ const OperadorPainel = () => {
   useEffect(() => {
     fetchAllSenhas();
   }, []); // Apenas carrega as senhas uma vez ao iniciar o componente
-
-  const handleAtender = async (id) => {
-    try {
-      const response = await axios.post(`${API_URL}/senhaOP/${id}/atender`);
-
-      if (response.status === 200) {
-        setMensagem(`Senha ${id} atendida com sucesso.`);
-        fetchAllSenhas(); // Atualiza as senhas no painel após atendimento
-      } else {
-        setMensagem('Erro ao atender a senha.');
-      }
-    } catch (error) {
-      console.error('Erro ao atender a senha:', error);
-      setMensagem('Erro ao atender a senha.');
-    }
-  };
 
   const handlePendente = (id) => {
     console.log(`Marcando a senha ${id} como "Não Compareceu"`);
@@ -101,7 +85,7 @@ const OperadorPainel = () => {
       <Button variant="contained" color="primary" onClick={fetchAllSenhas}>
         Atualizar Senhas
       </Button>
-
+    
       <Grid container spacing={3} className="grid-container">
         <Grid item xs={6} sm={3}>
           <Paper elevation={3} className="contador-paper">
@@ -128,9 +112,17 @@ const OperadorPainel = () => {
           </Paper>
         </Grid>
       </Grid>
+      <Button
+        variant="contained"
+        color="secondary"
+        onClick={chamarPrimeiraSenha}
+        style={{ marginTop: 16 }}
+      >
+        Chamar Primeira Senha
+      </Button>
 
       <List className="lista-senhas">
-        {senhas.atendidas.length > 0 && (
+        {senhas?.atendidas?.length > 0 && (
           <>
             <Typography variant="h6" gutterBottom>
               Atendidas
@@ -142,14 +134,6 @@ const OperadorPainel = () => {
                     primary={`Senha ${senha.id} - ${senha.tipo.toUpperCase()}`}
                     secondary={`Estado: ${senha.estado}`}
                   />
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={() => handleAtender(senha.id)}
-                    className="botao-atender"
-                  >
-                    Atender
-                  </Button>
                 </ListItem>
                 <Divider />
               </React.Fragment>
@@ -157,7 +141,7 @@ const OperadorPainel = () => {
           </>
         )}
 
-        {senhas.emEspera.length > 0 && (
+        {senhas?.emEspera?.length > 0 && (
           <>
             <Typography variant="h6" gutterBottom>
               Em Espera
@@ -169,14 +153,6 @@ const OperadorPainel = () => {
                     primary={`Senha ${senha.id} - ${senha.tipo.toUpperCase()}`}
                     secondary={`Estado: ${senha.estado}`}
                   />
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={() => handleAtender(senha.id)} // Passa o id da senha para o handleAtender
-                    className="botao-atender"
-                  >
-                    Atender
-                  </Button>
                   <Button
                     variant="outlined"
                     color="secondary"
@@ -191,7 +167,7 @@ const OperadorPainel = () => {
           </>
         )}
 
-        {senhas.pendentes.length > 0 && (
+        {senhas?.pendentes?.length > 0 && (
           <>
             <Typography variant="h6" gutterBottom>
               Pendentes
@@ -203,14 +179,6 @@ const OperadorPainel = () => {
                     primary={`Senha ${senha.id} - ${senha.tipo.toUpperCase()}`}
                     secondary={`Estado: ${senha.estado}`}
                   />
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={() => handleAtender(senha.id)}
-                    className="botao-atender"
-                  >
-                    Atender
-                  </Button>
                 </ListItem>
                 <Divider />
               </React.Fragment>
@@ -218,7 +186,7 @@ const OperadorPainel = () => {
           </>
         )}
 
-        {senhas.atendidas.length === 0 && senhas.emEspera.length === 0 && senhas.pendentes.length === 0 && (
+        {senhas?.atendidas?.length === 0 && senhas?.emEspera?.length === 0 && senhas?.pendentes?.length === 0 && (
           <Typography variant="body1">Nenhuma senha disponível</Typography>
         )}
       </List>
@@ -227,4 +195,3 @@ const OperadorPainel = () => {
 };
 
 export default OperadorPainel;
-
