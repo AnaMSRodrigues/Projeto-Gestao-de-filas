@@ -381,6 +381,39 @@ router.post('/alteraEstadoSenha/:codigo', async (req, res) => {
   }
 });
 
+// Rota para alterar o estado de "em atendimento" para "pendente"
+router.post('/alteraPendente/:id', async (req, res) => {
+  const { id } = req.params; // Recebe o ID da senha do corpo da requisição
+
+  if (!id) {
+    return res.status(400).json({ error: 'O ID da senha é obrigatório.' });
+  }
+
+  try {
+    // Atualiza o estado da senha para "em espera" apenas se ela estiver "pausado"
+    const updateResult = await client.query(
+      `UPDATE senha 
+       SET estado = $1 
+       WHERE id_senha = $2 AND estado = $3 
+       RETURNING *;`,
+      ['em atendimento', id, 'pendente']
+    );
+
+    if (updateResult.rowCount === 0) {
+      return res.status(404).json({ error: 'Senha não encontrada ou estado inválido.' });
+    }
+
+    // Retorna a senha atualizada
+    res.status(200).json({
+      message: 'Estado da senha atualizado com sucesso.',
+      senha: updateResult.rows[0],
+    });
+  } catch (error) {
+    console.error('Erro ao atualizar o estado da senha:', error.stack);
+    res.status(500).json({ error: 'Erro ao atualizar o estado da senha.' });
+  }
+});
+
 // Exporta as rotas
 module.exports = router;
 

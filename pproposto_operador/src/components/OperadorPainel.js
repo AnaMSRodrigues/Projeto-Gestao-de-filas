@@ -1,63 +1,61 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { Box, Button, Typography, List, ListItem, ListItemText, Divider, Grid, Paper } from '@mui/material';
 import './css/operadorPainel.css';
-import API_URL from '../config/apiConfig';
-import {chamarPrimeiraSenha} from '../services/apiService';
+import { alteraPendente, chamarPrimeiraSenha, fetchSenhasPorEstado } from '../services/apiService';
 
 const OperadorPainel = () => {
   const [senhas, setSenhas] = useState({
     atendidas: [],
     emEspera: [],
     pendentes: [],
+    emAtendimento: [],
+    canceladas: [],
+    pausadas: [],
   });
 
   const [contadores, setContadores] = useState({
     atendidas: 0,
     emEspera: 0,
     pendentes: 0,
+    emAtendimento: 0,
+    canceladas: 0,
+    pausadas: 0,
     total: 0,
   });
 
   const [mensagem, setMensagem] = useState('');
-  
+  const [senhaAtual, setSenhaAtual] = useState(null);
 
-  const fetchSenhasPorEstado = async (estado) => {
-    try {
-      // Aqui fazemos a requisição para o backend, usando o estado para a consulta filtrada
-      const response = await axios.get(`${API_URL}/senhaOP/${estado}`);
-      return response.data; // Retorna os dados recebidos do backend
-    } catch (error) {
-      console.error(`Erro ao carregar senhas com estado "${estado}":`, error);
-      setMensagem(`Erro ao carregar senhas com estado "${estado}".`);
-      return []; // Retorna um array vazio em caso de erro
-    }
-  };
-  
+
   const fetchAllSenhas = async () => {
-    const estados = ['atendida', 'em espera', 'pendente'];
+    const estados = ['atendida', 'em espera', 'pendente', 'em atendimento', 'cancelada', 'pausada'];
     const novasSenhas = {};
-    
+
     for (const estado of estados) {
       const senhasPorEstado = await fetchSenhasPorEstado(estado); // Requisição filtrada por estado
       novasSenhas[estado] = senhasPorEstado;
     }
-    console.log('Senhas:', novasSenhas);
     setSenhas(novasSenhas); // Atualiza o estado com as senhas filtradas
     atualizarContadores(novasSenhas); // Atualiza os contadores com os dados
   };
-  
+
 
   const atualizarContadores = (novasSenhas) => {
     const atendidas = novasSenhas['atendida'] ? novasSenhas['atendida'].length : 0;
     const emEspera = novasSenhas['em espera'] ? novasSenhas['em espera'].length : 0;
     const pendentes = novasSenhas['pendente'] ? novasSenhas['pendente'].length : 0;
+    const emAtendimento = novasSenhas['em atendimento'] ? novasSenhas['em atendimento'].length : 0;
+    const canceladas = novasSenhas['cancelada'] ? novasSenhas['cancelada'].length : 0;
+    const pausadas = novasSenhas['pausada'] ? novasSenhas['pausada'].length : 0;
 
     setContadores({
       atendidas,
       emEspera,
       pendentes,
-      total: atendidas + emEspera + pendentes,
+      emAtendimento,
+      canceladas,
+      pausadas,
+      total: atendidas + emEspera + pendentes + emAtendimento + canceladas + pausadas,
     });
   };
 
@@ -65,9 +63,41 @@ const OperadorPainel = () => {
     fetchAllSenhas();
   }, []); // Apenas carrega as senhas uma vez ao iniciar o componente
 
-  const handlePendente = (id) => {
-    console.log(`Marcando a senha ${id} como "Não Compareceu"`);
-    // Aqui você pode adicionar lógica para atualizar o estado da senha no backend
+  const handlePendente = async (id) => {
+    try {
+      const response = await alteraPendente(id);
+      if (response.success) {
+        setMensagem(`Senha ${id} marcada como "Não Compareceu".`);
+        setSenhaAtual(null); // Limpa a senha atual do estado
+        fetchAllSenhas(); // Atualiza a lista de senhas
+      } else {
+        setMensagem(`Erro ao marcar a senha ${id} como "Não Compareceu".`);
+      }
+    } catch (error) {
+      console.error('Erro ao alterar para pendente:', error);
+      setMensagem('Erro ao marcar a senha como "Não Compareceu".');
+    }
+  };
+  
+
+  const handleChamarPrimeiraSenha = async () => {
+    try {
+      const response = await chamarPrimeiraSenha();
+      if (response && response.chamada) {
+        setSenhaAtual({
+          id: response.senha.id_senha,
+          tipo: response.senha.tipo,
+          atendimento: response.chamada.atendimento,
+          horaInicio: response.chamada.hora_ini, // Hora exata do backend
+        });
+        setMensagem('');
+      } else {
+        setMensagem('Nenhuma senha disponível para chamada.');
+      }
+    } catch (error) {
+      console.error('Erro ao chamar a primeira senha:', error);
+      setMensagem('Erro ao chamar a senha.');
+    }
   };
 
   return (
@@ -85,7 +115,7 @@ const OperadorPainel = () => {
       <Button variant="contained" color="primary" onClick={fetchAllSenhas}>
         Atualizar Senhas
       </Button>
-    
+
       <Grid container spacing={3} className="grid-container">
         <Grid item xs={6} sm={3}>
           <Paper elevation={3} className="contador-paper">
@@ -107,6 +137,24 @@ const OperadorPainel = () => {
         </Grid>
         <Grid item xs={6} sm={3}>
           <Paper elevation={3} className="contador-paper">
+            <Typography variant="h6">Em Atendimento</Typography>
+            <Typography variant="h4">{contadores.emAtendimento}</Typography>
+          </Paper>
+        </Grid>
+        <Grid item xs={6} sm={3}>
+          <Paper elevation={3} className="contador-paper">
+            <Typography variant="h6">Canceladas</Typography>
+            <Typography variant="h4">{contadores.canceladas}</Typography>
+          </Paper>
+        </Grid>
+        <Grid item xs={6} sm={3}>
+          <Paper elevation={3} className="contador-paper">
+            <Typography variant="h6">Pausadas</Typography>
+            <Typography variant="h4">{contadores.pausadas}</Typography>
+          </Paper>
+        </Grid>
+        <Grid item xs={6} sm={3}>
+          <Paper elevation={3} className="contador-paper">
             <Typography variant="h6">Total</Typography>
             <Typography variant="h4">{contadores.total}</Typography>
           </Paper>
@@ -115,11 +163,47 @@ const OperadorPainel = () => {
       <Button
         variant="contained"
         color="secondary"
-        onClick={chamarPrimeiraSenha}
+        onClick={handleChamarPrimeiraSenha}
         style={{ marginTop: 16 }}
       >
         Chamar Primeira Senha
       </Button>
+      {senhaAtual && (
+        <Box mt={3} p={2} border={1} borderColor="grey.300" borderRadius={4}>
+          <Typography variant="h6">Atendimento Atual</Typography>
+          <Typography variant="body1">
+            <strong>Nº Senha:</strong> {senhaAtual.id}
+          </Typography>
+          <Typography variant="body1">
+            <strong>Tipo de Senha:</strong> {senhaAtual.tipo.toUpperCase()}
+          </Typography>
+          <Typography variant="body1">
+            <strong>Nº de atendimento:</strong> {senhaAtual.atendimento}
+          </Typography>
+          <Typography variant="body1">
+            <strong>Hora de Início:</strong> {new Date(senhaAtual.horaInicio).toLocaleString()}
+          </Typography>
+
+          <Box mt={2}>
+            <Button
+              variant="contained"
+              color="primary"
+              //onClick={() => terminarAtendimento(senhaAtual.id)}
+              style={{ marginRight: 8 }}
+            >
+              Terminar Atendimento
+            </Button>
+            <Button
+              variant="outlined"
+              color="secondary"
+              onClick={() => handlePendente(senhaAtual.id)}
+            >
+              Não Compareceu
+            </Button>
+          </Box>
+        </Box>
+      )}
+
 
       <List className="lista-senhas">
         {senhas?.atendidas?.length > 0 && (

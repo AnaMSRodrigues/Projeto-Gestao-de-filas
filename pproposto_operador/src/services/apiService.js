@@ -29,11 +29,24 @@ import API_URL from '../config/apiConfig';
 //     console.error('Erro ao carregar senhas:', error);
 //   }
 // };
+export const fetchSenhasPorEstado = async (estado) => {
+  try {
+    const response = await axios.get(`${API_URL}/senhaOP/${estado}`);
+    return response.data; // Retorna os dados recebidos do backend
+  } catch (error) {
+    console.error(`Erro ao carregar senhas com estado "${estado}":`, error);
+    return []; // Retorna um array vazio em caso de erro
+  }
+};
 
 export const chamarPrimeiraSenha = async () => {
   const response = await axios.get(`${API_URL}/chamarPrimeiraSenha`);
   return response.data;
 };
 
+export const alteraPendente = async (id) => {
+  const response = await axios.post(`${API_URL}/alteraPendente/${id}`);
+  return response.data;
+}
 
 
