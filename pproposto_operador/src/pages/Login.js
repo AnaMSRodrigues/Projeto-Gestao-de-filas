@@ -10,21 +10,24 @@ const Login = ({ onLogin }) => {
   const navigate = useNavigate();
 
 
-  const handleLogin = () => {
-    if (username === 'operador' && password === '1234') {
-      sessionStorage.setItem('role', 'operador');
-      sessionStorage.setItem('isAuthenticated', 'true');
-      onLogin();
-      navigate('/painel'); // Painel do operador
-    } else if (username === 'gestor' && password === '1234') {
-      sessionStorage.setItem('role', 'gestor');
-      sessionStorage.setItem('isAuthenticated', 'true');
-      onLogin();
-      navigate('/painel'); // Painel do gestor
-    } else {
-      setError('Credenciais inválidas');
-    }
-  };
+const handleLogin = () => {
+  if (username === 'operador' && password === '1234') {
+    sessionStorage.setItem('role', 'operador');
+    sessionStorage.setItem('isAuthenticated', 'true');
+    onLogin();
+    console.log(sessionStorage.getItem('isAuthenticated')); // Verificar valor
+    navigate('/painel'); // Painel do operador
+  } else if (username === 'gestor' && password === '1234') {
+    sessionStorage.setItem('role', 'gestor');
+    sessionStorage.setItem('isAuthenticated', 'true');
+    onLogin();
+    console.log(sessionStorage.getItem('isAuthenticated')); // Verificar valor
+    navigate('/painel'); // Painel do gestor
+  } else {
+    setError('Credenciais inválidas');
+  }
+};
+
   return (
     <Box className="login-container">
       <Typography variant="h4" gutterBottom>

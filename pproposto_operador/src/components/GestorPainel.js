@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Box, Typography, TextField, Button, Grid, Paper, List, ListItem, ListItemText, Divider, Alert } from '@mui/material';
-import Header from './header';
 import Footer from './footer';
 import Papa from 'papaparse'; // Biblioteca para importar ficheiros CSV
 import './css/gestorPainel.css';
+import { Link } from 'react-router-dom'; // Importando o componente Link
 
-const GestorPainel = () => {
+
+const GestorPainel = ({isAuthenticated, role}) => {
   const [horarios, setHorarios] = useState([]);
   const [novoHorario, setNovoHorario] = useState('');
   const [consumiveis, setConsumiveis] = useState([]);
@@ -13,6 +14,7 @@ const GestorPainel = () => {
   const [mensagem, setMensagem] = useState('');
   const [erro, setErro] = useState('');
   const [horariosCSV, setHorariosCSV] = useState([]); // Armazenar horários do CSV
+
 
   // Função para adicionar manualmente um novo horário
   const handleAdicionarHorario = () => {
@@ -85,7 +87,7 @@ const GestorPainel = () => {
 
         <Paper elevation={3} className="gestor-section">
           <Typography variant="h5" gutterBottom>
-            Gerenciamento de Horários
+            Gestão de Horários
           </Typography>
           <Box className="gestor-input-group">
             <TextField
@@ -104,7 +106,7 @@ const GestorPainel = () => {
           </Button>
 
           <Typography variant="h6" gutterBottom>
-            Horários Carregados
+            Horário Carregado
           </Typography>
           <List>
             {horariosCSV.length === 0 ? (
@@ -121,7 +123,20 @@ const GestorPainel = () => {
             )}
           </List>
         </Paper>
-        
+      
+          <Box className="gestor-header">
+            <Button
+              variant="contained"
+              color="secondary"
+              component={Link}
+              to="/painel/operador"
+              sx={{ mb: 2 }}
+            >
+              Aceder ao painel do Operador
+            </Button>
+          </Box>
+       
+
         <Paper elevation={3} className="gestor-section">
           <Typography variant="h5" gutterBottom>
             Solicitação de Consumíveis

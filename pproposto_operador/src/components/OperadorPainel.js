@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Box, Button, Typography, List, ListItem, ListItemText, Divider, Grid, Paper } from '@mui/material';
 import './css/operadorPainel.css';
 import { alteraPendente, chamarPrimeiraSenha, fetchSenhasPorEstado } from '../services/apiService';
+import { Link } from 'react-router-dom'; // Importando o componente Link
+import {isAuthenticated, role} from '../App';
 
-const OperadorPainel = () => {
+const OperadorPainel = ({isAuthenticated, role}) => {
   const [senhas, setSenhas] = useState({
     atendidas: [],
     emEspera: [],
@@ -78,7 +80,6 @@ const OperadorPainel = () => {
       setMensagem('Erro ao marcar a senha como "Não Compareceu".');
     }
   };
-  
 
   const handleChamarPrimeiraSenha = async () => {
     try {
@@ -274,6 +275,17 @@ const OperadorPainel = () => {
           <Typography variant="body1">Nenhuma senha disponível</Typography>
         )}
       </List>
+      {isAuthenticated && role === 'gestor' && (
+        <Button
+          variant="contained"
+          color="primary"
+          component={Link}
+          to="/gestor"
+          sx={{ mt: 2 }}
+        >
+          Voltar ao Painel do Gestor
+        </Button>
+      )}
     </Box>
   );
 };
