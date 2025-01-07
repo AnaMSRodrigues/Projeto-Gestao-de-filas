@@ -13,6 +13,19 @@ const client = new Client({
   port: 5432,            
 });
 
+// Conneção WebService ///
+const axios = require('axios');
+const https = require('https');
+
+const agent = new https.Agent({  
+  rejectUnauthorized: false
+});
+
+axios.get('http://172.20.10.2:80/api/Stock', { httpsAgent: agent })
+  .then(response => console.log(response.data))
+  .catch(error => console.error(error));
+
+
 // Conectar a BD
 client.connect()
   .then(() => {

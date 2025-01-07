@@ -1,5 +1,6 @@
 // routes.js
 import React from 'react';
+import { BrowserRouter } from 'react-router-dom';
 import { Route } from 'react-router-dom';
 import Login from './pages/login';
 import OperadorPainel from './components/operadorPainel';
@@ -9,8 +10,9 @@ const Routes = () => {
   return (
     <>
       <Route path="/login" element={<Login />} />
-      <Route path="/painel/operador" element={<OperadorPainel />} />
-      <Route path="/painel/gestor" element={<GestorPainel />} />
+      <Route path="/operador" element={<OperadorPainel />} />
+      <Route path="/gestor" element={<GestorPainel />} />
+      <Route path="operador2" element={<OperadorPainel/>} />
       
       {/* Redirecionamento para login em caso de rota não encontrada */}
       <Route path="*" element={<Login />} />

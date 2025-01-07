@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Button, Typography, List, ListItem, ListItemText, Divider, Grid, Paper } from '@mui/material';
 import './css/operadorPainel.css';
-import { alteraPendente, chamarPrimeiraSenha, fetchSenhasPorEstado } from '../services/apiService';
+import { alteraPendente, chamarPrimeiraSenha, fetchSenhasPorEstado, finalizarSenha } from '../services/apiService';
 import { Link } from 'react-router-dom'; // Importando o componente Link
 import {isAuthenticated, role} from '../App';
 
@@ -60,6 +60,25 @@ const OperadorPainel = ({isAuthenticated, role}) => {
       total: atendidas + emEspera + pendentes + emAtendimento + canceladas + pausadas,
     });
   };
+  
+  const getClassForEstado = (estado) => {
+    switch (estado) {
+      case 'atendida':
+        return 'MuiListItem-root atendida';
+      case 'em-espera':
+        return 'MuiListItem-root em-espera';
+      case 'pendente':
+        return 'MuiListItem-root pendente';
+      case 'em-atendimento':
+        return 'MuiListItem-root em-atendimento';
+      case 'cancelada':
+        return 'MuiListItem-root cancelada';
+      case 'pausada':
+        return 'MuiListItem-root pausada';
+      default:
+        return '';
+    }
+  }
 
   useEffect(() => {
     fetchAllSenhas();
@@ -68,6 +87,7 @@ const OperadorPainel = ({isAuthenticated, role}) => {
   const handlePendente = async (id) => {
     try {
       const response = await alteraPendente(id);
+      console.log(response); 
       if (response.success) {
         setMensagem(`Senha ${id} marcada como "Não Compareceu".`);
         setSenhaAtual(null); // Limpa a senha atual do estado
@@ -84,6 +104,8 @@ const OperadorPainel = ({isAuthenticated, role}) => {
   const handleChamarPrimeiraSenha = async () => {
     try {
       const response = await chamarPrimeiraSenha();
+      console.log('Resposta recebida:', response);  // Adicione este log para inspecionar a resposta
+
       if (response && response.chamada) {
         setSenhaAtual({
           id: response.senha.id_senha,
@@ -100,6 +122,29 @@ const OperadorPainel = ({isAuthenticated, role}) => {
       setMensagem('Erro ao chamar a senha.');
     }
   };
+
+  const handleFinalizarSenha = async (id) => {
+    try {
+      const response = await finalizarSenha(id); // Chama o endpoint para finalizar a senha
+      if (response && response.senha && response.chamada) {
+        // Atualiza os dados da senha e da chamada com os novos valores
+        setSenhaAtual({
+          id: response.senha.id_senha,
+          tipo: response.senha.tipo,
+          atendimento: response.chamada.atendimento,
+          horaInicio: response.chamada.hora_ini, // Hora de início da chamada
+          horaFim: response.chamada.hora_fim,   // Hora de fim da chamada
+        });
+        setMensagem('Senha finalizada com sucesso.');
+      } else {
+        setMensagem('Erro ao finalizar a senha ou chamada não encontrada.');
+      }
+    } catch (error) {
+      console.error('Erro ao finalizar a senha:', error);
+      setMensagem('Erro ao finalizar a senha.');
+    }
+  };
+  
 
   return (
     <Box className="painel-operador">
@@ -119,37 +164,37 @@ const OperadorPainel = ({isAuthenticated, role}) => {
 
       <Grid container spacing={3} className="grid-container">
         <Grid item xs={6} sm={3}>
-          <Paper elevation={3} className="contador-paper">
+          <Paper elevation={3} className={`contador-paper ${getClassForEstado('atendida')}`}>
             <Typography variant="h6">Atendidas</Typography>
             <Typography variant="h4">{contadores.atendidas}</Typography>
           </Paper>
         </Grid>
         <Grid item xs={6} sm={3}>
-          <Paper elevation={3} className="contador-paper">
+          <Paper elevation={3} className={`contador-paper ${getClassForEstado('em-espera')}`}>
             <Typography variant="h6">Em Espera</Typography>
             <Typography variant="h4">{contadores.emEspera}</Typography>
           </Paper>
         </Grid>
         <Grid item xs={6} sm={3}>
-          <Paper elevation={3} className="contador-paper">
+          <Paper elevation={3} className={`contador-paper ${getClassForEstado('pendente')}`}>
             <Typography variant="h6">Pendentes</Typography>
             <Typography variant="h4">{contadores.pendentes}</Typography>
           </Paper>
         </Grid>
         <Grid item xs={6} sm={3}>
-          <Paper elevation={3} className="contador-paper">
+          <Paper elevation={3} className={`contador-paper ${getClassForEstado('em-atendimento')}`}>
             <Typography variant="h6">Em Atendimento</Typography>
             <Typography variant="h4">{contadores.emAtendimento}</Typography>
           </Paper>
         </Grid>
         <Grid item xs={6} sm={3}>
-          <Paper elevation={3} className="contador-paper">
+          <Paper elevation={3} className={`contador-paper ${getClassForEstado('cancelada')}`}>
             <Typography variant="h6">Canceladas</Typography>
             <Typography variant="h4">{contadores.canceladas}</Typography>
           </Paper>
         </Grid>
         <Grid item xs={6} sm={3}>
-          <Paper elevation={3} className="contador-paper">
+          <Paper elevation={3} className={`contador-paper ${getClassForEstado('pausada')}`}>
             <Typography variant="h6">Pausadas</Typography>
             <Typography variant="h4">{contadores.pausadas}</Typography>
           </Paper>
@@ -189,7 +234,7 @@ const OperadorPainel = ({isAuthenticated, role}) => {
             <Button
               variant="contained"
               color="primary"
-              //onClick={() => terminarAtendimento(senhaAtual.id)}
+              onClick={() => handleFinalizarSenha(senhaAtual.id)}
               style={{ marginRight: 8 }}
             >
               Terminar Atendimento

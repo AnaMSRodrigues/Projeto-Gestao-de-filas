@@ -3,7 +3,8 @@ import { Box, Typography, TextField, Button, Grid, Paper, List, ListItem, ListIt
 import Footer from './footer';
 import Papa from 'papaparse'; // Biblioteca para importar ficheiros CSV
 import './css/gestorPainel.css';
-import { Link } from 'react-router-dom'; // Importando o componente Link
+import { useNavigate } from 'react-router-dom';
+import { solicitaMedicamento } from '../services/apiService';
 
 
 const GestorPainel = ({isAuthenticated, role}) => {
@@ -14,7 +15,14 @@ const GestorPainel = ({isAuthenticated, role}) => {
   const [mensagem, setMensagem] = useState('');
   const [erro, setErro] = useState('');
   const [horariosCSV, setHorariosCSV] = useState([]); // Armazenar horários do CSV
+  
+  const navigate = useNavigate(); // Hook para navegar
 
+  // Função para redirecionar para o painel do operador
+  //const handleNavigateToOperador = () => {
+   // console.log('Navegando para /operador');
+ //   navigate('/operador');
+ // };
 
   // Função para adicionar manualmente um novo horário
   const handleAdicionarHorario = () => {
@@ -33,14 +41,19 @@ const GestorPainel = ({isAuthenticated, role}) => {
     setHorarios(horariosAtualizados);
     setMensagem('Horário alterado com sucesso!');
   };
-  // Função para solicitar um novo consumível
-  const handleSolicitarConsumivel = () => {
-    if (novoConsumivel.trim()) {
-      setConsumiveis([...consumiveis, novoConsumivel]);
-      setNovoConsumivel('');
-      setMensagem('Consumível solicitado com sucesso!');
-    } else {
-      setErro('Por favor, insira o codigo de um consumível válido.');
+  // Função para manipular a solicitação de consumível
+  const handleSolicitarConsumivel = async () => {
+    try {
+      // Solicita os consumíveis através da função 'solicitaMedicamento'
+      const dadosConsumiveis = await solicitaMedicamento();  // Chama a função do apiService que busca os consumíveis
+      
+      // Atualiza o estado com os dados recebidos
+      setConsumiveis(dadosConsumiveis);
+      setErro(null);  // Reseta qualquer erro anterior
+      
+    } catch (error) {
+      console.error('Erro ao solicitar consumíveis:', error);
+      setErro('Erro ao buscar os consumíveis');  // Define o erro caso a requisição falhe
     }
   };
   // Função para fazer upload de um ficheiro CSV
@@ -123,49 +136,52 @@ const GestorPainel = ({isAuthenticated, role}) => {
             )}
           </List>
         </Paper>
-      
-          <Box className="gestor-header">
-            <Button
-              variant="contained"
-              color="secondary"
-              component={Link}
-              to="/painel/operador"
-              sx={{ mb: 2 }}
-            >
-              Aceder ao painel do Operador
-            </Button>
-          </Box>
-       
 
         <Paper elevation={3} className="gestor-section">
-          <Typography variant="h5" gutterBottom>
-            Solicitação de Consumíveis
-          </Typography>
-          <Box className="gestor-input-group">
-            <TextField
-              label="Nome do Consumível"
-              value={novoConsumivel}
-              onChange={(e) => setNovoConsumivel(e.target.value)}
-              fullWidth
-            />
-            <Button variant="contained" color="primary" onClick={handleSolicitarConsumivel}>
-              Solicitar
-            </Button>
-          </Box>
-          <Typography variant="h6" gutterBottom>
-            Consumíveis Solicitados
-          </Typography>
-          <List>
-            {consumiveis.map((item, index) => (
-              <React.Fragment key={index}>
-                <ListItem>
-                  <ListItemText primary={`Consumível ${index + 1}`} secondary={item} />
-                </ListItem>
-                <Divider />
-              </React.Fragment>
-            ))}
-          </List>
-        </Paper>
+      <Typography variant="h5" gutterBottom>
+        Solicitação de Consumíveis
+      </Typography>
+      <Box className="gestor-input-group">
+        <TextField
+          label="Nome do Consumível"
+          value={novoConsumivel}
+          onChange={(e) => setNovoConsumivel(e.target.value)}
+          fullWidth
+        />
+        <Button variant="contained" color="primary" onClick={handleSolicitarConsumivel}>
+          Solicitar
+        </Button>
+      </Box>
+      
+      {erro && <Typography color="error">{erro}</Typography>}  {/* Exibe mensagem de erro, caso haja */}
+
+      <Typography variant="h6" gutterBottom>
+        Consumíveis Solicitados
+      </Typography>
+      <List>
+        {consumiveis.map((item, index) => (
+          <React.Fragment key={index}>
+            <ListItem>
+              <ListItemText primary={`Consumível ${index + 1}`} secondary={item} />
+            </ListItem>
+            <Divider />
+          </React.Fragment>
+        ))}
+      </List>
+    </Paper>
+        <Box sx={{ mt: 3 }}>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={() => {
+              console.log('Role atual:', role);
+              console.log('isAuthenticated:', isAuthenticated);
+              navigate('/operador2');
+            }}
+          >
+            Aceder ao painel do Operador
+          </Button>
+        </Box>
       </Box>
 
       <Footer />

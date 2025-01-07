@@ -12,10 +12,7 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [role, setRole] = useState(null);
 
-  const handleRedirect = () => {
-  <Navigate to="/painel/operador" />
-}
-
+  
   // Função de logout
   const handleLogout = () => {
     sessionStorage.removeItem('isAuthenticated');
@@ -44,9 +41,9 @@ function App() {
               element={
                 isAuthenticated ? (
                   role === 'operador' ? (
-                    <Navigate to="/painel/operador" />
+                    <Navigate to="/operador" />
                   ) : role === 'gestor' ? (
-                    <Navigate to="/painel/gestor" />
+                    <Navigate to="/gestor" />
                   ) : (
                     <Navigate to="/" />
                   )
@@ -59,17 +56,16 @@ function App() {
               }
             />
 
-            {/* Painel do Operador */}
             {isAuthenticated && role === 'operador' && (
-              <Route path="/painel/operador" element={<OperadorPainel />} />
+              <Route path="/operador" element={<OperadorPainel />} />
             )}
 
-            {/* Painel do Gestor */}
             {isAuthenticated && role === 'gestor' && (
-              <Route path="/painel/gestor" element={<GestorPainel />} />
+              <Route path="/gestor" element={<GestorPainel />} />
             )}
 
-            {/* Rota Curinga */}
+            <Route path="/operador2" element={<OperadorPainel />} />
+
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </Container>

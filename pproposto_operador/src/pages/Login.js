@@ -16,13 +16,13 @@ const handleLogin = () => {
     sessionStorage.setItem('isAuthenticated', 'true');
     onLogin();
     console.log(sessionStorage.getItem('isAuthenticated')); // Verificar valor
-    navigate('/painel'); // Painel do operador
+    navigate('/operador'); // Painel do operador
   } else if (username === 'gestor' && password === '1234') {
     sessionStorage.setItem('role', 'gestor');
     sessionStorage.setItem('isAuthenticated', 'true');
     onLogin();
     console.log(sessionStorage.getItem('isAuthenticated')); // Verificar valor
-    navigate('/painel'); // Painel do gestor
+    navigate('/gestor'); // Painel do gestor
   } else {
     setError('Credenciais inválidas');
   }

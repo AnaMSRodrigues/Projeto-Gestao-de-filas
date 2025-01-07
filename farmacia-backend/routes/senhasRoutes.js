@@ -297,6 +297,99 @@ router.get('/chamarPrimeiraSenha', async (req, res) => {
   }
 });
 
+router.post('/chamarPrimeiraSenhaAtualizada', async (req, res) => {
+  try {
+    // 1. Consulta para obter a primeira senha com base no estado e no atendimento da última chamada
+    const result = await client.query(`
+      SELECT s.*, c.atendimento, c.id_chamada
+      FROM senha s
+      LEFT JOIN chamada c ON s.id_senha = c.id_senha
+      WHERE 
+        (s.estado = 'pendente' AND (c.atendimento = 2 OR c.atendimento = 3))
+        OR (s.estado = 'em espera')
+      ORDER BY 
+        CASE 
+          WHEN s.estado = 'pendente' AND (c.atendimento = 2 OR c.atendimento = 3) THEN 1
+          WHEN s.estado = 'em espera' AND s.tipo = 'prioritaria' THEN 2
+          WHEN s.estado = 'em espera' AND s.tipo = 'geral' THEN 3
+          ELSE 4
+        END,
+        s.data_senha ASC,
+        c.hora_ini DESC
+      LIMIT 1
+    `);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Nenhuma senha disponível para chamada' });
+    }
+
+    const senha = result.rows[0];
+    const idSenha = senha.id_senha;
+
+    // 2. Lida com a condição de atendimento ser 3 (aqui vamos atualizar o atendimento da chamada, não da senha)
+    if (senha.atendimento === 3) {
+      await client.query('UPDATE senha SET estado = $1 WHERE id_senha = $2', ['cancelada', idSenha]);
+      return res.status(200).json({ message: 'Senha cancelada devido ao atendimento ser 3', senha });
+    }
+
+    // 3. Verifica se já existe uma chamada para essa senha e se o atendimento já foi atualizado para 2 ou 3
+    if (senha.id_chamada) {
+      // Caso já exista uma chamada, apenas atualiza o atendimento da chamada
+      let novoAtendimento = senha.atendimento;
+
+      if (novoAtendimento === 2) {
+        novoAtendimento = 3; // Se o atendimento for 2, atualizamos para 3
+      } else if (novoAtendimento === 1) {
+        novoAtendimento = 2; // Se o atendimento for 1, atualizamos para 2
+      }
+
+      await client.query(`
+        UPDATE chamada 
+        SET atendimento = $1
+        WHERE id_chamada = $2
+      `, [novoAtendimento, senha.id_chamada]);
+
+      return res.status(200).json({
+        message: 'Atendimento atualizado com sucesso.',
+        senha,
+        atendimento: novoAtendimento,
+      });
+    }
+
+    // 4. Se não existir uma chamada associada à senha, atualiza a senha para "em atendimento"
+    await client.query(`
+      UPDATE senha 
+      SET estado = $1
+      WHERE id_senha = $2
+    `, ['em atendimento', idSenha]);
+
+    // 5. Registra a chamada (hora_ini é o timestamp atual, hora_fim será NULL por enquanto)
+    const horaIni = new Date().toISOString(); // Hora atual em formato timestamp ISO
+    const idOperador = 1;  // Colocando 1 como id_operador, conforme solicitado
+    const atendimento = 1; // O primeiro atendimento para a senha
+
+    // 6. Insere a nova chamada, somente se não houver chamada associada à senha
+    const queryChamada = `
+      INSERT INTO chamada (hora_ini, hora_fim, atendimento, id_senha, id_operador)
+      VALUES ($1, NULL, $2, $3, $4)
+      RETURNING id_chamada, hora_ini, hora_fim, atendimento, id_senha, id_operador;
+    `;
+
+    const chamadaResult = await client.query(queryChamada, [horaIni, atendimento, idSenha, idOperador]);
+
+    // 7. Retorna a resposta com os detalhes da senha atualizada e a chamada criada
+    res.status(201).json({
+      message: 'Senha chamada com sucesso',
+      senha: result.rows[0],  // Detalhes da senha que foi chamada
+      chamada: chamadaResult.rows[0],  // Detalhes da chamada registrada, incluindo id_chamada
+    });
+
+  } catch (err) {
+    console.error('Erro ao chamar a primeira senha:', err.stack);
+    res.status(500).json({ error: 'Erro ao chamar a senha' });
+  }
+});
+
 
 router.post('/insereReceita', async (req, res) => {
   const { n_receita, pin_acesso, pin_opcao } = req.body;
@@ -381,38 +474,138 @@ router.post('/alteraEstadoSenha/:codigo', async (req, res) => {
   }
 });
 
-// Rota para alterar o estado de "em atendimento" para "pendente"
 router.post('/alteraPendente/:id', async (req, res) => {
-  const { id } = req.params; // Recebe o ID da senha do corpo da requisição
+  const { id } = req.params; // Recebe o ID da senha da URL
 
   if (!id) {
     return res.status(400).json({ error: 'O ID da senha é obrigatório.' });
   }
 
   try {
-    // Atualiza o estado da senha para "em espera" apenas se ela estiver "pausado"
-    const updateResult = await client.query(
+    // 1. Verifica se a senha existe com o estado 'em atendimento'
+    console.log(`Procurando por senha com id_senha: ${id} e estado = 'em atendimento'`);
+    
+    const senhaResult = await client.query(
+      `SELECT * FROM senha WHERE id_senha = $1 AND estado = $2`,
+      [id, 'em atendimento']
+    );
+
+    if (senhaResult.rowCount === 0) {
+      console.log(`Senha não encontrada com id_senha: ${id} e estado 'em atendimento'`);
+      return res.status(404).json({ error: 'Senha não encontrada ou estado inválido.' });
+    }
+
+    // A senha existe e tem o estado correto, então vamos atualizá-la
+    console.log(`Senha encontrada:`, senhaResult.rows[0]);
+
+    // 2. Atualiza o estado da senha para "pendente"
+    const updateSenhaResult = await client.query(
       `UPDATE senha 
        SET estado = $1 
        WHERE id_senha = $2 AND estado = $3 
        RETURNING *;`,
-      ['em atendimento', id, 'pendente']
+      ['pendente', id, 'em atendimento']
     );
 
-    if (updateResult.rowCount === 0) {
-      return res.status(404).json({ error: 'Senha não encontrada ou estado inválido.' });
+    if (updateSenhaResult.rowCount === 0) {
+      return res.status(404).json({ error: 'Senha não encontrada ou estado inválido após a tentativa de atualização.' });
     }
 
-    // Retorna a senha atualizada
+    // 3. Verifica se a chamada existe e está em andamento
+    console.log(`Procurando chamada com id_senha: ${id} e hora_fim IS NULL`);
+    
+    const chamadaResult = await client.query(
+      `SELECT * FROM chamada WHERE id_senha = $1 AND hora_fim IS NULL`,
+      [id]
+    );
+
+    if (chamadaResult.rowCount === 0) {
+      return res.status(404).json({ error: 'Chamada não encontrada ou já finalizada.' });
+    }
+
+    const chamada = chamadaResult.rows[0];
+    console.log(`Chamada encontrada:`, chamada);
+
+    // 4. Se o atendimento for 2, atualize para 3
+    let atendimentoAtualizado = chamada.atendimento;
+    console.log(`Atendimento atual: ${atendimentoAtualizado}`);
+
+    if (atendimentoAtualizado === '2') {
+      console.log('Atualizando atendimento de 2 para 3');
+      atendimentoAtualizado = '3'; // Atualiza para 3
+    }
+
+    // 5. Atualiza o campo de atendimento na tabela chamada
+    const updateChamadaResult = await client.query(
+      `UPDATE chamada
+       SET atendimento = $1
+       WHERE id_senha = $2 AND hora_fim IS NULL
+       RETURNING *;`,
+      [atendimentoAtualizado, id]
+    );
+
+    if (updateChamadaResult.rowCount === 0) {
+      return res.status(404).json({ error: 'Chamada não encontrada ou já finalizada ao tentar atualizar atendimento.' });
+    }
+
+    // 6. Retorna a senha e a chamada com os novos valores
     res.status(200).json({
-      message: 'Estado da senha atualizado com sucesso.',
-      senha: updateResult.rows[0],
+      message: 'Estado da senha e atendimento atualizado com sucesso.',
+      senha: updateSenhaResult.rows[0],
+      chamada: updateChamadaResult.rows[0],
     });
   } catch (error) {
     console.error('Erro ao atualizar o estado da senha:', error.stack);
     res.status(500).json({ error: 'Erro ao atualizar o estado da senha.' });
   }
 });
+
+
+//Rota para terminar atendimento 
+router.get('/finalizarSenha/:idSenha', async (req, res) => {
+  const { idSenha } = req.params;
+
+  try {
+    // 1. Consulta para verificar se a senha existe e está em atendimento
+    const result = await client.query('SELECT * FROM senha WHERE id_senha = $1 AND estado = $2', [idSenha, 'em atendimento']);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Senha não encontrada ou não está em atendimento' });
+    }
+
+    const senha = result.rows[0];
+
+    // 2. Atualiza o estado da senha para "atendida"
+    await client.query('UPDATE senha SET estado = $1 WHERE id_senha = $2', ['atendida', idSenha]);
+
+    // 3. Atualiza a hora_fim da chamada com o timestamp atual
+    const horaFim = new Date().toISOString();  // Hora atual em formato timestamp ISO
+
+    const queryAtualizarChamada = `
+      UPDATE chamada
+      SET hora_fim = $1
+      WHERE id_senha = $2 AND hora_fim IS NULL
+      RETURNING id_chamada, hora_ini, hora_fim, atendimento, id_senha, id_operador;
+    `;
+
+    const chamadaResult = await client.query(queryAtualizarChamada, [horaFim, idSenha]);
+
+    if (chamadaResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Chamada não encontrada ou já finalizada' });
+    }
+
+    // 4. Retorna a resposta com os detalhes da senha atualizada e da chamada finalizada
+    res.status(200).json({
+      message: 'Senha atendida e chamada finalizada com sucesso',
+      senha: senha,  // Detalhes da senha que foi atendida
+      chamada: chamadaResult.rows[0],  // Detalhes da chamada finalizada
+    });
+  } catch (err) {
+    console.error('Erro ao finalizar a senha:', err.stack);
+    res.status(500).json({ error: 'Erro ao finalizar a senha' });
+  }
+});
+
 
 // Exporta as rotas
 module.exports = router;

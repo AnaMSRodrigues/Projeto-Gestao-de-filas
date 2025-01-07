@@ -40,7 +40,7 @@ export const fetchSenhasPorEstado = async (estado) => {
 };
 
 export const chamarPrimeiraSenha = async () => {
-  const response = await axios.get(`${API_URL}/chamarPrimeiraSenha`);
+  const response = await axios.post(`${API_URL}/chamarPrimeiraSenhaAtualizada`);
   return response.data;
 };
 
@@ -49,4 +49,12 @@ export const alteraPendente = async (id) => {
   return response.data;
 }
 
+export const finalizarSenha = async(idSenha) => {
+  const response = await axios.get(`${API_URL}/finalizarSenha/${idSenha}`);
+  return response.data;
+}
 
+export const solicitaMedicamento = async() => {
+  const response = await axios.get(`${'http://172.20.10.2:80/api/Stock'}`);
+  return response.data;
+}
