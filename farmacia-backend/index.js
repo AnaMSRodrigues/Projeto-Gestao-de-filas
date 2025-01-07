@@ -4,6 +4,9 @@ const cors = require('cors'); // Permite requisições de diferentes origens (CO
 const router = require('./routes/senhasRoutes');
 const app = express();
 
+
+require('../farmacia-backend/scripts/cronReset');
+
 // Configuração do cliente PostgreSQL
 const client = new Client({
   user: 'postgres',      
