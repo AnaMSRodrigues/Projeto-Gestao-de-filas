@@ -17,16 +17,33 @@ const client = new Client({
 
 // Conneção WebService //
 const axios = require('axios');
-const https = require('https');
 
-const agent = new https.Agent({  
-  rejectUnauthorized: false
+
+// Endpoint para consultar medicamentos
+app.get('/api/Stock', async (req, res) => {
+  const idPro = req.query.id_pro;
+  if (!idPro) {
+    return res.status(400).json({ error: 'ID do produto é obrigatório.' });
+  }
+
+  try {
+    const response = await axios.get(`http://172.20.10.2/api/Stock?id_pro=${idPro}`);
+
+    // Transformar a resposta para corresponder ao formato esperado no frontend
+    const data = response.data.map((item) => ({
+      id: item.id_produto,           
+      nome: item.nome_produto,        
+      disponibilidade: item.disponibilidade, 
+      tempoEntrega: item.tempo_entrega,     
+    }));
+    console.log('Dados transformados:', data);
+
+    res.json(data); // Enviar a resposta transformada
+  } catch (error) {
+    console.error('Erro ao acessar o web service:', error.message);
+    res.status(500).json({ error: 'Erro ao acessar o web service externo.' });
+  }
 });
-
-axios.get('http://172.20.10.2:80/api/Stock', { httpsAgent: agent })
-  .then(response => console.log(response.data))
-  .catch(error => console.error(error));
-
 
 // Conectar a BD
 client.connect()
@@ -41,7 +58,7 @@ client.connect()
 app.use(express.json()); // Para lidar com corpo das requisições em formato JSON
 app.use(cors()); // Ativar CORS para permitir que o front-end se conecte
 app.use(router); // Assume as rotas definidas 
-
+  
 const PORT = process.env.PORT || 3001; // Utiliza a porta 3001 por padrão
 app.listen(PORT, () => {
   console.log(`Servidor aberto na porta ${PORT}`);

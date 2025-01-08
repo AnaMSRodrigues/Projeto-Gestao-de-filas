@@ -43,7 +43,15 @@ export const finalizarSenha = async(idSenha) => {
   return response.data;
 }
 
-export const solicitaMedicamento = async() => {
-  const response = await axios.get(`${'http://172.20.10.2:80/api/Stock'}`);
-  return response.data;
-}
+export const solicitaMedicamento = async (idPro) => {
+  try {
+    const response = await axios.get(`${API_URL}/api/Stock?id_pro=${idPro}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Erro ao solicitar medicamento: ${error.message}`);
+    throw error;
+  }
+};
+
+
+

@@ -11,18 +11,12 @@ const GestorPainel = ({ isAuthenticated, role }) => {
   const [horarios, setHorarios] = useState([]);
   const [novoHorario, setNovoHorario] = useState('');
   const [consumiveis, setConsumiveis] = useState([]);
-  const [novoConsumivel, setNovoConsumivel] = useState('');
   const [mensagem, setMensagem] = useState('');
+  const [idPro, setIdPro] = useState('');
   const [erro, setErro] = useState('');
   const [horariosCSV, setHorariosCSV] = useState([]); // Armazenar horários do CSV
 
   const navigate = useNavigate(); // Hook para navegar entre páginas
-
-  // Função para redirecionar para o painel do operador
-  //const handleNavigateToOperador = () => {
-  // console.log('Navegando para /operador');
-  //   navigate('/operador');
-  // };
 
   // Função para adicionar manualmente um novo horário
   const handleAdicionarHorario = () => {
@@ -44,18 +38,26 @@ const GestorPainel = ({ isAuthenticated, role }) => {
   // Função para manipular a solicitação de consumível
   const handleSolicitarConsumivel = async () => {
     try {
-      // Solicita os consumíveis através da função 'solicitaMedicamento'
-      const dadosConsumiveis = await solicitaMedicamento();  // Chama a função do apiService que busca os consumíveis
+      if (!idPro.trim()) {
+        setErro('Por favor, insira um ID válido para o produto.');
+        return;
+      }
 
-      // Atualiza o estado com os dados recebidos
-      setConsumiveis(dadosConsumiveis);
-      setErro(null);  // Reseta qualquer erro anterior
+      const dadosConsumiveis = await solicitaMedicamento(idPro);
 
+      if (!dadosConsumiveis || dadosConsumiveis.length === 0) {
+        throw new Error("Nenhum dado foi recebido do servidor.");
+      }
+
+      setConsumiveis(dadosConsumiveis); 
+      setErro(null);
+      setMensagem('Consumível solicitado com sucesso!');
     } catch (error) {
-      console.error('Erro ao solicitar consumíveis:', error);
-      setErro('Erro ao buscar os consumíveis');  // Define o erro caso a requisição falhe
+      console.error('Erro ao solicitar consumíveis:', error.message || error);
+      setErro('Erro ao buscar os consumíveis. Tente novamente.');
     }
   };
+
   // Função para fazer upload de um ficheiro CSV
   const handleUploadCSV = (e) => {
     const file = e.target.files[0];
@@ -142,9 +144,9 @@ const GestorPainel = ({ isAuthenticated, role }) => {
           </Typography>
           <Box className="gestor-input-group">
             <TextField
-              label="Nome do Consumível"
-              value={novoConsumivel}
-              onChange={(e) => setNovoConsumivel(e.target.value)}
+              label="ID do Produto"
+              value={idPro}
+              onChange={(e) => setIdPro(e.target.value)}
               fullWidth
             />
             <Button variant="contained" color="primary" onClick={handleSolicitarConsumivel}>
@@ -161,13 +163,17 @@ const GestorPainel = ({ isAuthenticated, role }) => {
             {consumiveis.map((item, index) => (
               <React.Fragment key={index}>
                 <ListItem>
-                  <ListItemText primary={`Consumível ${index + 1}`} secondary={item} />
+                  <ListItemText
+                    primary={`Consumível: ${item.nome}`}
+                    secondary={`ID: ${item.id} | Disponibilidade: ${item.disponibilidade} | Tempo de Entrega: ${item.tempoEntrega}`}
+                  />
                 </ListItem>
                 <Divider />
               </React.Fragment>
             ))}
           </List>
         </Paper>
+
         <Box sx={{ mt: 3 }}>
           <Button
             variant="contained"
