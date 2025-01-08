@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { solicitaMedicamento } from '../services/apiService';
 
 
-const GestorPainel = ({isAuthenticated, role}) => {
+const GestorPainel = ({ isAuthenticated, role }) => {
   const [horarios, setHorarios] = useState([]);
   const [novoHorario, setNovoHorario] = useState('');
   const [consumiveis, setConsumiveis] = useState([]);
@@ -15,14 +15,14 @@ const GestorPainel = ({isAuthenticated, role}) => {
   const [mensagem, setMensagem] = useState('');
   const [erro, setErro] = useState('');
   const [horariosCSV, setHorariosCSV] = useState([]); // Armazenar horários do CSV
-  
-  const navigate = useNavigate(); // Hook para navegar
+
+  const navigate = useNavigate(); // Hook para navegar entre páginas
 
   // Função para redirecionar para o painel do operador
   //const handleNavigateToOperador = () => {
-   // console.log('Navegando para /operador');
- //   navigate('/operador');
- // };
+  // console.log('Navegando para /operador');
+  //   navigate('/operador');
+  // };
 
   // Função para adicionar manualmente um novo horário
   const handleAdicionarHorario = () => {
@@ -46,11 +46,11 @@ const GestorPainel = ({isAuthenticated, role}) => {
     try {
       // Solicita os consumíveis através da função 'solicitaMedicamento'
       const dadosConsumiveis = await solicitaMedicamento();  // Chama a função do apiService que busca os consumíveis
-      
+
       // Atualiza o estado com os dados recebidos
       setConsumiveis(dadosConsumiveis);
       setErro(null);  // Reseta qualquer erro anterior
-      
+
     } catch (error) {
       console.error('Erro ao solicitar consumíveis:', error);
       setErro('Erro ao buscar os consumíveis');  // Define o erro caso a requisição falhe
@@ -81,7 +81,6 @@ const GestorPainel = ({isAuthenticated, role}) => {
 
   return (
     <Box className="gestor-container">
-      
       <Box className="gestor-content">
         <Typography variant="h4" gutterBottom color="primary">
           Painel do Gestor
@@ -123,7 +122,7 @@ const GestorPainel = ({isAuthenticated, role}) => {
           </Typography>
           <List>
             {horariosCSV.length === 0 ? (
-              <Typography variant="body1">Nenhum horário carregado ainda.</Typography>
+              <Typography variant="body1">Sem horários carregados.</Typography>
             ) : (
               horariosCSV.map((horario, index) => (
                 <React.Fragment key={index}>
@@ -138,37 +137,37 @@ const GestorPainel = ({isAuthenticated, role}) => {
         </Paper>
 
         <Paper elevation={3} className="gestor-section">
-      <Typography variant="h5" gutterBottom>
-        Solicitação de Consumíveis
-      </Typography>
-      <Box className="gestor-input-group">
-        <TextField
-          label="Nome do Consumível"
-          value={novoConsumivel}
-          onChange={(e) => setNovoConsumivel(e.target.value)}
-          fullWidth
-        />
-        <Button variant="contained" color="primary" onClick={handleSolicitarConsumivel}>
-          Solicitar
-        </Button>
-      </Box>
-      
-      {erro && <Typography color="error">{erro}</Typography>}  {/* Exibe mensagem de erro, caso haja */}
+          <Typography variant="h5" gutterBottom>
+            Solicitação de Consumíveis
+          </Typography>
+          <Box className="gestor-input-group">
+            <TextField
+              label="Nome do Consumível"
+              value={novoConsumivel}
+              onChange={(e) => setNovoConsumivel(e.target.value)}
+              fullWidth
+            />
+            <Button variant="contained" color="primary" onClick={handleSolicitarConsumivel}>
+              Solicitar
+            </Button>
+          </Box>
 
-      <Typography variant="h6" gutterBottom>
-        Consumíveis Solicitados
-      </Typography>
-      <List>
-        {consumiveis.map((item, index) => (
-          <React.Fragment key={index}>
-            <ListItem>
-              <ListItemText primary={`Consumível ${index + 1}`} secondary={item} />
-            </ListItem>
-            <Divider />
-          </React.Fragment>
-        ))}
-      </List>
-    </Paper>
+          {erro && <Typography color="error">{erro}</Typography>}
+
+          <Typography variant="h6" gutterBottom>
+            Consumíveis Solicitados
+          </Typography>
+          <List>
+            {consumiveis.map((item, index) => (
+              <React.Fragment key={index}>
+                <ListItem>
+                  <ListItemText primary={`Consumível ${index + 1}`} secondary={item} />
+                </ListItem>
+                <Divider />
+              </React.Fragment>
+            ))}
+          </List>
+        </Paper>
         <Box sx={{ mt: 3 }}>
           <Button
             variant="contained"
@@ -183,7 +182,6 @@ const GestorPainel = ({isAuthenticated, role}) => {
           </Button>
         </Box>
       </Box>
-
       <Footer />
     </Box>
   );

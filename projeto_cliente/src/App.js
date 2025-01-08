@@ -3,14 +3,14 @@ import { Container, Grid, Typography, Box } from '@mui/material';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import AgendarSenha from './components/AgendarSenha';
-import './App.css'; 
+import './App.css';
 
 function App() {
   return (
-    <Box className="app-container"> 
-      <Header /> 
+    <Box className="app-container">
+      <Header />
 
-      <Container component="main" maxWidth="md" className="main-container"> 
+      <Container component="main" maxWidth="md" className="main-container">
         <Typography variant="h4" className="title" gutterBottom>
           Bem vindo! Por favor selecione uma senha
         </Typography>

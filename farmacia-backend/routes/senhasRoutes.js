@@ -3,36 +3,36 @@ const router = express.Router();
 
 const { Client } = require('pg');
 
-// Configuração da conexão PostgreSQL
+// Configuração da conexão a base de dados PostgreSQL
 const client = new Client({
   user: 'postgres',
-  host: 'localhost',   
+  host: 'localhost',
   database: 'Projeto',
-  password: '1411', 
+  password: '1411',
   port: 5432,
 });
 
 // Conecta à BD
 client.connect();
- 
-/////////////////////////////////////////////////ARTICULACAO CLIENTE 
+
+
 // Rota para obter todas as senhas
 router.get('/senha', (req, res) => {
   const query = 'SELECT * FROM senha';
 
   client.query(query, (err, result) => {
     if (err) {
-      console.error('Erro ao executar a consulta', err.stack);
-      return res.status(500).json({ error: 'Erro ao consultar as senhas' });
+      console.error('Erro ao efetuar pesquisa', err.stack);
+      return res.status(500).json({ error: 'Erro ao procurar as senhas' });
     }
-    res.json(result.rows);  // Devolve as linhas encontradas no banco
+    res.json(result.rows);  // Devolve as linhas encontradas na BD
   });
 });
 
 // Rota para obter uma senha específica pelo ID
 router.get('/senha/:id', (req, res) => {
   const { id } = req.params;
-  const query = 'SELECT * FROM senha WHERE id_senha = $1';  // Consulta SQL com um filtro pelo ID
+  const query = 'SELECT * FROM senha WHERE id_senha = $1'; // Filtra pesquisa por ID
   const values = [id];
 
   client.query(query, values, (err, result) => {
@@ -47,8 +47,10 @@ router.get('/senha/:id', (req, res) => {
   });
 });
 
+// Rota para criar uma nova senha
+// Estado da senha é "em espera" por default
 router.post('/criasenha', async (req, res) => {
-  const { tipo, id_servico } = req.body; // Recebe o tipo de senha e id_servico da requisição
+  const { tipo, id_servico } = req.body; // Recebe o tipo de senha e id_servico
 
   // Verifica se o tipo e id_servico foram enviados
   if (!tipo || !id_servico) {
@@ -56,25 +58,25 @@ router.post('/criasenha', async (req, res) => {
   }
 
   try {
-    // 1. Obtém o maior id_utente atual
+    // Obtém o maior id_utente atual
     const maxIdUtenteQuery = 'SELECT COALESCE(MAX(id_utente), 0) AS max_id FROM utente';
     const maxIdResult = await client.query(maxIdUtenteQuery);
     const novoIdUtente = maxIdResult.rows[0].max_id + 1;
 
-    // 2. Insere o novo utente
+    // Insere o novo utente
     const novoUtenteQuery = 'INSERT INTO utente (id_utente) VALUES ($1)';
     await client.query(novoUtenteQuery, [novoIdUtente]);
 
-    // 3. Cria a nova senha
+    // Cria a nova senha
     const novaSenhaQuery = `
       INSERT INTO senha (tipo, estado, id_utente, id_servico) 
       VALUES ($1, $2, $3, $4) 
       RETURNING *;
     `;
-    const valoresSenha = [tipo, 'em espera', novoIdUtente, id_servico]; 
+    const valoresSenha = [tipo, 'em espera', novoIdUtente, id_servico];
     const senhaResult = await client.query(novaSenhaQuery, valoresSenha);
 
-    // 4. Responde ao cliente com os detalhes da senha criada
+    // Devolve ao cliente os detalhes da senha criada
     res.status(201).json({
       message: 'Senha criada com sucesso',
       senha: senhaResult.rows[0],
@@ -85,34 +87,36 @@ router.post('/criasenha', async (req, res) => {
   }
 });
 
+// Rota para criar uma nova senhaAgendada , com código de acesso associado
+// Estado da senha é pausado por default
 router.post('/criasenhaAgendada', async (req, res) => {
-  const { tipo, id_servico, codigo_acesso } = req.body; // Recebe o tipo de senha e id_servico da requisição
+  const { tipo, id_servico, codigo_acesso } = req.body; // Recebe o tipo de senha, id_servico e codigo de acesso
 
-  // Verifica se o tipo e id_servico foram enviados
+  // Verifica se o tipo, id_servico e codigo de acesso foram enviados
   if (!tipo || !id_servico || !codigo_acesso) {
     return res.status(400).json({ error: 'O tipo de senha , id_servico e codigo_acesso são obrigatórios' });
   }
 
   try {
-    // 1. Obtém o maior id_utente atual
+    // Obtém o maior id_utente atual
     const maxIdUtenteQuery = 'SELECT COALESCE(MAX(id_utente), 0) AS max_id FROM utente';
     const maxIdResult = await client.query(maxIdUtenteQuery);
     const novoIdUtente = maxIdResult.rows[0].max_id + 1;
 
-    // 2. Insere o novo utente
+    // Insere o novo utente
     const novoUtenteQuery = 'INSERT INTO utente (id_utente) VALUES ($1)';
     await client.query(novoUtenteQuery, [novoIdUtente]);
 
-    // 3. Cria a nova senha
+    // Cria a nova senha
     const novaSenhaQuery = `
       INSERT INTO senha (tipo, estado, id_utente, id_servico, codigo_acesso) 
       VALUES ($1, $2, $3, $4, $5) 
       RETURNING *;
     `;
-    const valoresSenha = [tipo, 'pausado', novoIdUtente, id_servico, codigo_acesso]; 
+    const valoresSenha = [tipo, 'pausado', novoIdUtente, id_servico, codigo_acesso];
     const senhaResult = await client.query(novaSenhaQuery, valoresSenha);
 
-    // 4. Responde ao cliente com os detalhes da senha criada
+    // Devolve ao cliente os detalhes da senha criada
     res.status(201).json({
       message: 'Senha criada com sucesso',
       senha: senhaResult.rows[0],
@@ -123,20 +127,20 @@ router.post('/criasenhaAgendada', async (req, res) => {
   }
 });
 
-// Rota para atualizar o estado de uma senha
+// Rota para atualizar o estado de uma senha pelo ID
 router.put('/senha/:id_senha', (req, res) => {
-  const { id_senha } = req.params;  // ID da senha que será atualizada
+  const { id_senha } = req.params;
   const { estado } = req.body;      // O novo estado (caso contrário, a lógica será automática)
 
-  // Lista dos estados válidos (não inclui "atendido" ou "em atendimento" diretamente)
-  const estadosValidos = ['em espera', 'pendente', 'em atendimento'];
+  // Lista dos estados válidos 
+  const estadosValidos = ['em espera', 'pendente', 'em atendimento', 'cancelado', 'atendido'];
 
   // Verifica se o estado fornecido é válido
   if (estado && !estadosValidos.includes(estado)) {
-    return res.status(400).json({ error: 'Estado inválido. Os estados válidos são: "em espera", "pendente".' });
+    return res.status(400).json({ error: 'Estado inválido.' });
   }
 
-  // Verificar se a senha existe
+  // Verifica se a senha existe
   const queryVerificaSenha = 'SELECT * FROM senha WHERE id_senha = $1';
   client.query(queryVerificaSenha, [id_senha], (err, result) => {
     if (err) {
@@ -147,7 +151,7 @@ router.put('/senha/:id_senha', (req, res) => {
       return res.status(404).json({ error: 'Senha não encontrada' });
     }
 
-    //Verifica a chamada associada à senha
+    // Verifica a chamada associada à senha
     const queryVerificaChamada = 'SELECT * FROM chamada WHERE id_senha = $1';
     client.query(queryVerificaChamada, [id_senha], (err, resultChamada) => {
       if (err) {
@@ -155,7 +159,7 @@ router.put('/senha/:id_senha', (req, res) => {
         return res.status(500).json({ error: 'Erro ao verificar chamadas associadas à senha' });
       }
 
-      let novoEstado = result.rows[0].estado; 
+      let novoEstado = result.rows[0].estado;
 
       // Lógica para atualizar o estado com base nas chamadas associadas
       if (resultChamada.rows.length > 0) {
@@ -191,9 +195,7 @@ router.put('/senha/:id_senha', (req, res) => {
   });
 });
 
-///////////////////////////////////////////////////////ARTICULACAO OPERADOR 
-
-//Metodo que organiza as senhas por estado , data e hora 
+// Rota que organiza as senhas por estado , data e hora 
 router.get('/senhaOPordena', async (req, res) => {
   try {
     // Consulta SQL para filtrar por estado "em espera", ordenar por prioridade e data
@@ -207,19 +209,20 @@ router.get('/senhaOPordena', async (req, res) => {
           ELSE 3 
         END,
         data_senha ASC  
-    `); 
-    res.status(200).json(result.rows); // Retorna as senhas filtradas e ordenadas
+    `);
+    res.status(200).json(result.rows); // Devolve as senhas filtradas e ordenadas
   } catch (err) {
     console.error('Erro ao procurar senhas:', err.stack);
     res.status(500).json({ error: 'Erro ao procurar senhas', message: err.message });
   }
 });
 
+// Rota para obter a lista de senhas de um estado
 router.get('/senhaOP/:estado', async (req, res) => {
   const { estado } = req.params;
   try {
     const result = await client.query('SELECT * FROM senha WHERE estado = $1', [estado]);
-    
+
     if (result.rows.length === 0) {
       return res.status(404).json({ message: `Nenhuma senha encontrada no estado: ${estado}` });
     }
@@ -231,7 +234,7 @@ router.get('/senhaOP/:estado', async (req, res) => {
   }
 });
 
-// Rota para chamar uma senha específica
+// Rota para chamar (colocar estado em atendimento) de uma senha específica
 router.post('/senhaOP/:id/atender', async (req, res) => {
   const { id } = req.params;
   try {
@@ -246,9 +249,10 @@ router.post('/senhaOP/:id/atender', async (req, res) => {
   }
 });
 
+// Rota combinada - organiza as senhas por estado, data e hora e seleciona a primeira, criando uma chamada associada
 router.get('/chamarPrimeiraSenha', async (req, res) => {
   try {
-    // 1. Consulta para obter a primeira senha "em espera" ordenada
+    // Consulta para obter a primeira senha "em espera" ordenada
     const result = await client.query(`
       SELECT * FROM senha
       WHERE estado = 'em espera'
@@ -266,16 +270,16 @@ router.get('/chamarPrimeiraSenha', async (req, res) => {
       return res.status(404).json({ message: 'Nenhuma senha em espera encontrada' });
     }
 
-    const senha = result.rows[0];  // Primeira senha da lista
+    const senha = result.rows[0];
     const idSenha = senha.id_senha;
 
-    // 2. Atualiza o estado da senha para "em atendimento"
+    // Atualiza o estado da senha para "em atendimento"
     await client.query('UPDATE senha SET estado = $1 WHERE id_senha = $2', ['em atendimento', idSenha]);
 
-    // 3. Registra a chamada (hora_ini é o timestamp atual, hora_fim será NULL por enquanto)
+    // Regista a chamada (hora_ini é o timestamp atual, hora_fim será NULL por enquanto)
     const horaIni = new Date().toISOString(); // Hora atual em formato timestamp ISO
-    const idOperador = 1;  // Colocando 1 como id_operador, conforme solicitado
-    const atendimento = '1'; // Pode ser ajustado conforme o seu sistema de atendimento
+    const idOperador = 1;  // Coloca 1 como id_operador, até implementar lógica dos balcões 
+    const atendimento = '1';
 
     const queryChamada = `
       INSERT INTO chamada (hora_ini, hora_fim, atendimento, id_senha, id_operador)
@@ -285,11 +289,11 @@ router.get('/chamarPrimeiraSenha', async (req, res) => {
 
     const chamadaResult = await client.query(queryChamada, [horaIni, atendimento, idSenha, idOperador]);
 
-    // 4. Retorna a resposta com os detalhes da senha atualizada e a chamada criada
+    // Retorna a resposta com os detalhes da senha atualizada e a chamada criada
     res.status(201).json({
       message: 'Senha chamada com sucesso',
-      senha: result.rows[0],  // Detalhes da senha que foi chamada
-      chamada: chamadaResult.rows[0],  // Detalhes da chamada registrada, incluindo id_chamada
+      senha: result.rows[0],
+      chamada: chamadaResult.rows[0],
     });
   } catch (err) {
     console.error('Erro ao chamar a primeira senha:', err.stack);
@@ -297,19 +301,20 @@ router.get('/chamarPrimeiraSenha', async (req, res) => {
   }
 });
 
+// Rota combinada - mantém a lógica do chamarPrimeiraSenha + adiciona as senhas com estado pendente e atendimento = 2 ou 3 ao inicio da lista
 router.post('/chamarPrimeiraSenhaAtualizada', async (req, res) => {
   try {
-    // 1. Consulta para obter a primeira senha com base no estado e no atendimento da última chamada
+    // Consulta para obter a primeira senha com base no estado e no atendimento da última chamada
     const result = await client.query(`
       SELECT s.*, c.atendimento, c.id_chamada
       FROM senha s
       LEFT JOIN chamada c ON s.id_senha = c.id_senha
       WHERE 
-        (s.estado = 'pendente' AND (c.atendimento = 2 OR c.atendimento = 3))
+        (s.estado = 'pendente' AND (c.atendimento = 1 OR c.atendimento = 2))
         OR (s.estado = 'em espera')
       ORDER BY 
         CASE 
-          WHEN s.estado = 'pendente' AND (c.atendimento = 2 OR c.atendimento = 3) THEN 1
+          WHEN s.estado = 'pendente' AND (c.atendimento = 1 OR c.atendimento = 2) THEN 1
           WHEN s.estado = 'em espera' AND s.tipo = 'prioritaria' THEN 2
           WHEN s.estado = 'em espera' AND s.tipo = 'geral' THEN 3
           ELSE 4
@@ -326,21 +331,24 @@ router.post('/chamarPrimeiraSenhaAtualizada', async (req, res) => {
     const senha = result.rows[0];
     const idSenha = senha.id_senha;
 
-    // 2. Lida com a condição de atendimento ser 3 (aqui vamos atualizar o atendimento da chamada, não da senha)
+    // Se o atendimento for 3, altera o estado da senha para cancelado 
     if (senha.atendimento === 3) {
       await client.query('UPDATE senha SET estado = $1 WHERE id_senha = $2', ['cancelada', idSenha]);
-      return res.status(200).json({ message: 'Senha cancelada devido ao atendimento ser 3', senha });
+      return res.status(200).json({ message: 'Senha cancelada por não comparencia à 3ªvez', senha });
     }
 
-    // 3. Verifica se já existe uma chamada para essa senha e se o atendimento já foi atualizado para 2 ou 3
+    // Atualiza o estado da senha para "em atendimento"
+    await client.query('UPDATE senha SET estado = $1 WHERE id_senha = $2', ['em atendimento', idSenha]);
+
+    // Verifica se já existe uma chamada para essa senha
     if (senha.id_chamada) {
-      // Caso já exista uma chamada, apenas atualiza o atendimento da chamada
       let novoAtendimento = senha.atendimento;
 
+      // Atualiza o atendimento da chamada existente
       if (novoAtendimento === 2) {
-        novoAtendimento = 3; // Se o atendimento for 2, atualizamos para 3
+        novoAtendimento = 3;
       } else if (novoAtendimento === 1) {
-        novoAtendimento = 2; // Se o atendimento for 1, atualizamos para 2
+        novoAtendimento = 2;
       }
 
       await client.query(`
@@ -356,19 +364,11 @@ router.post('/chamarPrimeiraSenhaAtualizada', async (req, res) => {
       });
     }
 
-    // 4. Se não existir uma chamada associada à senha, atualiza a senha para "em atendimento"
-    await client.query(`
-      UPDATE senha 
-      SET estado = $1
-      WHERE id_senha = $2
-    `, ['em atendimento', idSenha]);
+    // Se não houver chamada associada, regista uma nova chamada
+    const horaIni = new Date().toISOString();
+    const idOperador = 1;  // Volta a definir id_operador = 1 , até lógica do balcao ser implementada
+    const atendimento = 1; // Primeiro atendimento
 
-    // 5. Registra a chamada (hora_ini é o timestamp atual, hora_fim será NULL por enquanto)
-    const horaIni = new Date().toISOString(); // Hora atual em formato timestamp ISO
-    const idOperador = 1;  // Colocando 1 como id_operador, conforme solicitado
-    const atendimento = 1; // O primeiro atendimento para a senha
-
-    // 6. Insere a nova chamada, somente se não houver chamada associada à senha
     const queryChamada = `
       INSERT INTO chamada (hora_ini, hora_fim, atendimento, id_senha, id_operador)
       VALUES ($1, NULL, $2, $3, $4)
@@ -377,11 +377,11 @@ router.post('/chamarPrimeiraSenhaAtualizada', async (req, res) => {
 
     const chamadaResult = await client.query(queryChamada, [horaIni, atendimento, idSenha, idOperador]);
 
-    // 7. Retorna a resposta com os detalhes da senha atualizada e a chamada criada
+    // Retorna a resposta com os detalhes da senha atualizada e a chamada criada
     res.status(201).json({
       message: 'Senha chamada com sucesso',
-      senha: result.rows[0],  // Detalhes da senha que foi chamada
-      chamada: chamadaResult.rows[0],  // Detalhes da chamada registrada, incluindo id_chamada
+      senha: result.rows[0],
+      chamada: chamadaResult.rows[0],
     });
 
   } catch (err) {
@@ -390,7 +390,8 @@ router.post('/chamarPrimeiraSenhaAtualizada', async (req, res) => {
   }
 });
 
-
+// Rota que insere receita na BD 
+// Limita a inserção com validação através de expressoes regulares 
 router.post('/insereReceita', async (req, res) => {
   const { n_receita, pin_acesso, pin_opcao } = req.body;
   const n_receitaInt = Number(n_receita);
@@ -398,7 +399,7 @@ router.post('/insereReceita', async (req, res) => {
   const pin_opcaoInt = Number(pin_opcao);
 
   if (!/^\d{19}$/.test(n_receita) || !/^\d{6}$/.test(pin_acesso) || !/^\d{4}$/.test(pin_opcao)) {
-    return res.status(400).json({ sucesso: false, erro: 'Parâmetros inválidos.' });
+    return res.status(400).json({ sucesso: false, erro: 'Parametros inválidos.' });
   }
 
   try {
@@ -417,15 +418,15 @@ router.post('/insereReceita', async (req, res) => {
     });
   } catch (error) {
     if (error.code === '23505') {
-      return res.status(400).json({ sucesso: false, erro: 'O número da receita já está cadastrado.' });
+      return res.status(400).json({ sucesso: false, erro: 'O número da receita já existe.' });
     }
     res.status(500).json({ sucesso: false, erro: 'Erro interno no servidor.' });
   }
 });
 
-
+// Rota que permite eliminar uma senha pelo ID
 router.delete('/deleteSenha/:id', async (req, res) => {
-  const { id } = req.params; // Captura o ID da URL
+  const { id } = req.params;
   try {
     // Executa a query de exclusão
     const result = await client.query('DELETE FROM senha WHERE id_senha = $1', [id]);
@@ -443,10 +444,10 @@ router.delete('/deleteSenha/:id', async (req, res) => {
 
 // Rota para alterar o estado de "pausado" para "em espera"
 router.post('/alteraEstadoSenha/:codigo', async (req, res) => {
-  const { codigo } = req.params; // Recebe o ID da senha do corpo da requisição
+  const { codigo } = req.params;
 
   if (!codigo) {
-    return res.status(400).json({ error: 'O Codigo da senha é obrigatório.' });
+    return res.status(400).json({ error: 'O codigo de acesso é obrigatório.' });
   }
 
   try {
@@ -463,7 +464,7 @@ router.post('/alteraEstadoSenha/:codigo', async (req, res) => {
       return res.status(404).json({ error: 'Senha não encontrada ou estado inválido.' });
     }
 
-    // Retorna a senha atualizada
+    // Devolve a senha atualizada
     res.status(200).json({
       message: 'Estado da senha atualizado com sucesso.',
       senha: updateResult.rows[0],
@@ -474,17 +475,18 @@ router.post('/alteraEstadoSenha/:codigo', async (req, res) => {
   }
 });
 
+// Rota para alterar o estado de "em atendimento" para "pendente"
 router.post('/alteraPendente/:id', async (req, res) => {
-  const { id } = req.params; // Recebe o ID da senha da URL
+  const { id } = req.params;
 
   if (!id) {
     return res.status(400).json({ error: 'O ID da senha é obrigatório.' });
   }
 
   try {
-    // 1. Verifica se a senha existe com o estado 'em atendimento'
+    // Verifica se a senha existe com o estado 'em atendimento'
     console.log(`Procurando por senha com id_senha: ${id} e estado = 'em atendimento'`);
-    
+
     const senhaResult = await client.query(
       `SELECT * FROM senha WHERE id_senha = $1 AND estado = $2`,
       [id, 'em atendimento']
@@ -495,10 +497,7 @@ router.post('/alteraPendente/:id', async (req, res) => {
       return res.status(404).json({ error: 'Senha não encontrada ou estado inválido.' });
     }
 
-    // A senha existe e tem o estado correto, então vamos atualizá-la
-    console.log(`Senha encontrada:`, senhaResult.rows[0]);
-
-    // 2. Atualiza o estado da senha para "pendente"
+    // Atualiza o estado da senha para "pendente"
     const updateSenhaResult = await client.query(
       `UPDATE senha 
        SET estado = $1 
@@ -511,9 +510,6 @@ router.post('/alteraPendente/:id', async (req, res) => {
       return res.status(404).json({ error: 'Senha não encontrada ou estado inválido após a tentativa de atualização.' });
     }
 
-    // 3. Verifica se a chamada existe e está em andamento
-    console.log(`Procurando chamada com id_senha: ${id} e hora_fim IS NULL`);
-    
     const chamadaResult = await client.query(
       `SELECT * FROM chamada WHERE id_senha = $1 AND hora_fim IS NULL`,
       [id]
@@ -521,38 +517,12 @@ router.post('/alteraPendente/:id', async (req, res) => {
 
     if (chamadaResult.rowCount === 0) {
       return res.status(404).json({ error: 'Chamada não encontrada ou já finalizada.' });
-    }
+    };
 
-    const chamada = chamadaResult.rows[0];
-    console.log(`Chamada encontrada:`, chamada);
-
-    // 4. Se o atendimento for 2, atualize para 3
-    let atendimentoAtualizado = chamada.atendimento;
-    console.log(`Atendimento atual: ${atendimentoAtualizado}`);
-
-    if (atendimentoAtualizado === '2') {
-      console.log('Atualizando atendimento de 2 para 3');
-      atendimentoAtualizado = '3'; // Atualiza para 3
-    }
-
-    // 5. Atualiza o campo de atendimento na tabela chamada
-    const updateChamadaResult = await client.query(
-      `UPDATE chamada
-       SET atendimento = $1
-       WHERE id_senha = $2 AND hora_fim IS NULL
-       RETURNING *;`,
-      [atendimentoAtualizado, id]
-    );
-
-    if (updateChamadaResult.rowCount === 0) {
-      return res.status(404).json({ error: 'Chamada não encontrada ou já finalizada ao tentar atualizar atendimento.' });
-    }
-
-    // 6. Retorna a senha e a chamada com os novos valores
+    // Devolve a senha com os novos valores
     res.status(200).json({
       message: 'Estado da senha e atendimento atualizado com sucesso.',
       senha: updateSenhaResult.rows[0],
-      chamada: updateChamadaResult.rows[0],
     });
   } catch (error) {
     console.error('Erro ao atualizar o estado da senha:', error.stack);
@@ -560,13 +530,12 @@ router.post('/alteraPendente/:id', async (req, res) => {
   }
 });
 
-
-//Rota para terminar atendimento 
+//Rota para terminar atendimento por ID da senha 
 router.get('/finalizarSenha/:idSenha', async (req, res) => {
   const { idSenha } = req.params;
 
   try {
-    // 1. Consulta para verificar se a senha existe e está em atendimento
+    // Verifica se a senha existe e se o seu estado é "em atendimento"
     const result = await client.query('SELECT * FROM senha WHERE id_senha = $1 AND estado = $2', [idSenha, 'em atendimento']);
 
     if (result.rows.length === 0) {
@@ -575,10 +544,10 @@ router.get('/finalizarSenha/:idSenha', async (req, res) => {
 
     const senha = result.rows[0];
 
-    // 2. Atualiza o estado da senha para "atendida"
+    // Atualiza o estado da senha para "atendida"
     await client.query('UPDATE senha SET estado = $1 WHERE id_senha = $2', ['atendida', idSenha]);
 
-    // 3. Atualiza a hora_fim da chamada com o timestamp atual
+    // Atualiza a hora_fim da chamada com o timestamp atual
     const horaFim = new Date().toISOString();  // Hora atual em formato timestamp ISO
 
     const queryAtualizarChamada = `
@@ -594,7 +563,7 @@ router.get('/finalizarSenha/:idSenha', async (req, res) => {
       return res.status(404).json({ message: 'Chamada não encontrada ou já finalizada' });
     }
 
-    // 4. Retorna a resposta com os detalhes da senha atualizada e da chamada finalizada
+    // Devolve a resposta com os detalhes da senha atualizada e da chamada finalizada
     res.status(200).json({
       message: 'Senha atendida e chamada finalizada com sucesso',
       senha: senha,  // Detalhes da senha que foi atendida
@@ -605,7 +574,6 @@ router.get('/finalizarSenha/:idSenha', async (req, res) => {
     res.status(500).json({ error: 'Erro ao finalizar a senha' });
   }
 });
-
 
 // Exporta as rotas
 module.exports = router;

@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Box, Button, Typography, List, ListItem, ListItemText, Divider, Grid, Paper } from '@mui/material';
 import './css/operadorPainel.css';
 import { alteraPendente, chamarPrimeiraSenha, fetchSenhasPorEstado, finalizarSenha } from '../services/apiService';
-import { Link } from 'react-router-dom'; // Importando o componente Link
-import {isAuthenticated, role} from '../App';
+import { Link } from 'react-router-dom';
+import { isAuthenticated, role } from '../App';
 
-const OperadorPainel = ({isAuthenticated, role}) => {
+const OperadorPainel = ({ isAuthenticated, role }) => {
   const [senhas, setSenhas] = useState({
     atendidas: [],
     emEspera: [],
@@ -28,19 +28,19 @@ const OperadorPainel = ({isAuthenticated, role}) => {
   const [mensagem, setMensagem] = useState('');
   const [senhaAtual, setSenhaAtual] = useState(null);
 
-
   const fetchAllSenhas = async () => {
     const estados = ['atendida', 'em espera', 'pendente', 'em atendimento', 'cancelada', 'pausada'];
     const novasSenhas = {};
 
     for (const estado of estados) {
-      const senhasPorEstado = await fetchSenhasPorEstado(estado); // Requisição filtrada por estado
+      const senhasPorEstado = await fetchSenhasPorEstado(estado);
+      console.log(`Senhas para o estado ${estado}:`, senhasPorEstado);
       novasSenhas[estado] = senhasPorEstado;
     }
     setSenhas(novasSenhas); // Atualiza o estado com as senhas filtradas
-    atualizarContadores(novasSenhas); // Atualiza os contadores com os dados
+    console.log('Senhas atualizadas:', novasSenhas);
+    atualizarContadores(novasSenhas); // Atualiza os contadores 
   };
-
 
   const atualizarContadores = (novasSenhas) => {
     const atendidas = novasSenhas['atendida'] ? novasSenhas['atendida'].length : 0;
@@ -60,7 +60,7 @@ const OperadorPainel = ({isAuthenticated, role}) => {
       total: atendidas + emEspera + pendentes + emAtendimento + canceladas + pausadas,
     });
   };
-  
+
   const getClassForEstado = (estado) => {
     switch (estado) {
       case 'atendida':
@@ -80,18 +80,20 @@ const OperadorPainel = ({isAuthenticated, role}) => {
     }
   }
 
+  // Apenas carrega as senhas uma vez ao iniciar o componente
   useEffect(() => {
     fetchAllSenhas();
-  }, []); // Apenas carrega as senhas uma vez ao iniciar o componente
+  }, []);
 
   const handlePendente = async (id) => {
     try {
       const response = await alteraPendente(id);
-      console.log(response); 
-      if (response.success) {
+      console.log(response);
+
+      if (response && response.senha) {
         setMensagem(`Senha ${id} marcada como "Não Compareceu".`);
         setSenhaAtual(null); // Limpa a senha atual do estado
-        fetchAllSenhas(); // Atualiza a lista de senhas
+        await fetchAllSenhas(); // Atualiza a lista de senhas
       } else {
         setMensagem(`Erro ao marcar a senha ${id} como "Não Compareceu".`);
       }
@@ -144,7 +146,6 @@ const OperadorPainel = ({isAuthenticated, role}) => {
       setMensagem('Erro ao finalizar a senha.');
     }
   };
-  
 
   return (
     <Box className="painel-operador">
@@ -212,7 +213,7 @@ const OperadorPainel = ({isAuthenticated, role}) => {
         onClick={handleChamarPrimeiraSenha}
         style={{ marginTop: 16 }}
       >
-        Chamar Primeira Senha
+        Chamar próxima senha
       </Button>
       {senhaAtual && (
         <Box mt={3} p={2} border={1} borderColor="grey.300" borderRadius={4}>
@@ -250,13 +251,10 @@ const OperadorPainel = ({isAuthenticated, role}) => {
         </Box>
       )}
 
-
       <List className="lista-senhas">
         {senhas?.atendidas?.length > 0 && (
           <>
-            <Typography variant="h6" gutterBottom>
-              Atendidas
-            </Typography>
+            <Typography variant="h6" gutterBottom>Atendidas</Typography>
             {senhas.atendidas.map((senha) => (
               <React.Fragment key={senha.id}>
                 <ListItem>
@@ -273,9 +271,7 @@ const OperadorPainel = ({isAuthenticated, role}) => {
 
         {senhas?.emEspera?.length > 0 && (
           <>
-            <Typography variant="h6" gutterBottom>
-              Em Espera
-            </Typography>
+            <Typography variant="h6" gutterBottom>Em Espera</Typography>
             {senhas.emEspera.map((senha) => (
               <React.Fragment key={senha.id}>
                 <ListItem>
@@ -283,13 +279,6 @@ const OperadorPainel = ({isAuthenticated, role}) => {
                     primary={`Senha ${senha.id} - ${senha.tipo.toUpperCase()}`}
                     secondary={`Estado: ${senha.estado}`}
                   />
-                  <Button
-                    variant="outlined"
-                    color="secondary"
-                    onClick={() => handlePendente(senha.id)}
-                  >
-                    Não Compareceu
-                  </Button>
                 </ListItem>
                 <Divider />
               </React.Fragment>
@@ -299,9 +288,7 @@ const OperadorPainel = ({isAuthenticated, role}) => {
 
         {senhas?.pendentes?.length > 0 && (
           <>
-            <Typography variant="h6" gutterBottom>
-              Pendentes
-            </Typography>
+            <Typography variant="h6" gutterBottom>Pendentes</Typography>
             {senhas.pendentes.map((senha) => (
               <React.Fragment key={senha.id}>
                 <ListItem>

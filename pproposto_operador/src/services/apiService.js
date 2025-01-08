@@ -18,24 +18,13 @@ import API_URL from '../config/apiConfig';
 //   (error) => Promise.reject(error)
 // );
 
-// Exemplo de função para usar a instância do Axios
-// export const fetchSenhas = async () => {
-//   try {
-//     const response = await axios.get(`${API_URL}/senhaOP`);
-//     console.log(response.data); 
-//     setSenhas(response.data); 
-//     atualizarContadores(response.data); 
-//   } catch (error) {
-//     console.error('Erro ao carregar senhas:', error);
-//   }
-// };
 export const fetchSenhasPorEstado = async (estado) => {
   try {
     const response = await axios.get(`${API_URL}/senhaOP/${estado}`);
-    return response.data; // Retorna os dados recebidos do backend
+    return response.data;
   } catch (error) {
     console.error(`Erro ao carregar senhas com estado "${estado}":`, error);
-    return []; // Retorna um array vazio em caso de erro
+    return [];
   }
 };
 

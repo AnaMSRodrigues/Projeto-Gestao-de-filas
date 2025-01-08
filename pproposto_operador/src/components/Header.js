@@ -9,13 +9,12 @@ const Header = ({ isAuthenticated, onLogout }) => {
         <Typography variant="h6" component="div" className="header-title" sx={{ flexGrow: 1 }}>
           Sistema de Gestão de Senhas - Interface Operador
         </Typography>
-        
-        {/* O botão de Logout só será visível se o usuário estiver autenticado */}
+
         {isAuthenticated && (
           <Button
             variant="outlined"
             color="inherit"
-            onClick={onLogout} // Chama a função de logout
+            onClick={onLogout}
             sx={{ ml: 2 }}
           >
             Logout

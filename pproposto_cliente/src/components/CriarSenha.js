@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Button, Alert, Box, FormControl, InputLabel, Select, MenuItem, Typography, TextField } from '@mui/material';
-import { adicionarSenha, atualizarEstadoSenhaAuto } from '../services/apiService'; // Função que faz o POST para o servidor
+import { adicionarSenha, atualizarEstadoSenhaAuto } from '../services/apiService';
 import './css/CriarSenha.css';
 
 const CriarSenha = () => {
   const [mensagem, setMensagem] = useState('');
   const [erro, setErro] = useState('');
   const [idServico, setIdServico] = useState('');
-  const [codigo, setCodigo] = useState(''); // Estado para armazenar o código de atendimento agendado
+  const [codigo, setCodigo] = useState('');
 
   const criarSenha = async (tipo) => {
     try {
@@ -51,7 +51,7 @@ const CriarSenha = () => {
           <Select
             labelId="servico-label"
             value={idServico}
-            onChange={(e) => setIdServico(e.target.value)} // Atualiza o estado do idServico
+            onChange={(e) => setIdServico(e.target.value)}
             className="select-servico"
           >
             <MenuItem value={1}>Aquisição de medicação</MenuItem>
@@ -70,14 +70,14 @@ const CriarSenha = () => {
             fullWidth
             label="Código de Agendamento"
             value={codigo}
-            onChange={(e) => {setCodigo(e.target.value)}} // Atualiza o estado do código
+            onChange={(e) => { setCodigo(e.target.value) }}
             className="input-codigo"
           />
           <Button
             variant="contained"
             onClick={async () => {
               try {
-                const resposta = await atualizarEstadoSenhaAuto(codigo); // Chama a função para criar a senha agendada
+                const resposta = await atualizarEstadoSenhaAuto(codigo);
                 setMensagem(`A sua senha é o número: ${resposta.senha.id_senha}`);
                 setErro('');
               } catch (error) {
@@ -87,7 +87,7 @@ const CriarSenha = () => {
               }
             }}
             className="botao-criar-senha"
-            disabled={!codigo.trim()} // Desativa o botão se o código estiver vazio
+            disabled={!codigo.trim()}
           >
             Selecionar Senha Agendada
           </Button>
@@ -103,16 +103,16 @@ const CriarSenha = () => {
             variant="contained"
             onClick={() => criarSenha('geral')}
             className="botao-geral"
-            disabled={!idServico} // Desativa o botão se nenhum serviço for selecionado
+            disabled={!idServico}
           >
             Senha Geral
           </Button>
 
           <Button
             variant="contained"
-            onClick={() => criarSenha('prioritaria')} // Apenas passamos o tipo
+            onClick={() => criarSenha('prioritaria')}
             className="botao-prioritaria"
-            disabled={!idServico} // Desativa o botão se nenhum serviço for selecionado
+            disabled={!idServico}
           >
             Senha Prioritária
           </Button>

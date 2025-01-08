@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button, Alert, Box, FormControl, InputLabel, Select, MenuItem, Typography, TextField } from '@mui/material';
-import { adicionarSenhaAgendada, verificarReceita } from '../services/apiService'; // Importa as funções da API
+import { adicionarSenhaAgendada, verificarReceita } from '../services/apiService';
 import './css/AgendarSenha.css';
 
 const AgendarSenha = () => {
@@ -10,9 +10,9 @@ const AgendarSenha = () => {
   const [numeroReceita, setNumeroReceita] = useState('');
   const [pinOpcao, setPinOpcao] = useState('');
   const [pinAcesso, setPinAcesso] = useState('');
-  const [codigoGerado, setCodigoGerado] = useState(''); // Código de acesso gerado
+  const [codigoGerado, setCodigoGerado] = useState('');
 
-  // Função para gerar o código de acesso de 6 dígitos
+  // Função para gerar o código de acesso de 6 dígitos aleatórios
   const gerarCodigoAcesso = () => {
     const codigo = Math.floor(100000 + Math.random() * 900000); // Gera um código de 6 dígitos
     setCodigoGerado(codigo);
@@ -43,7 +43,7 @@ const AgendarSenha = () => {
         return;
       }
 
-      // Verificar se a receita existe no sistema e guarda-a
+      // Verifica se a receita existe no sistema e guarda-a
       const respostaReceita = await verificarReceita({
         n_receita: numeroReceita,
         pin_acesso: pinAcesso,
@@ -58,21 +58,19 @@ const AgendarSenha = () => {
       // Gera o código de acesso para a nova senha
       const novoCodigoAcesso = gerarCodigoAcesso();
 
-      // Objeto da nova senha que será enviado para a API
+      // Objeto da nova senha que será enviado para o backend
       const novaSenhaAgendada = {
-        tipo, // Tipo de senha (geral ou prioritária)
+        tipo,
         estado: 'pausado',
-        id_servico: idServico, // ID do serviço selecionado
-        codigo_acesso: novoCodigoAcesso // Código de acesso gerado
+        id_servico: idServico, 
+        codigo_acesso: novoCodigoAcesso 
       };
 
-      // Envia a senha para o backend, mas não precisa da resposta
       await adicionarSenhaAgendada(novaSenhaAgendada);
-      
-      // Se a senha for criada com sucesso
+
       setMensagem(`Senha criada com sucesso. Código de acesso: ${novoCodigoAcesso}`);
       setErro('');
-      setCodigoGerado(novoCodigoAcesso); // Exibe o código gerado na tela
+      setCodigoGerado(novoCodigoAcesso); 
 
       // Limpa os campos de entrada
       setNumeroReceita('');
@@ -137,31 +135,31 @@ const AgendarSenha = () => {
           </Select>
         </FormControl>
 
-        <TextField 
-          label="Número de Receita (19 dígitos)" 
-          value={numeroReceita} 
-          onChange={(e) => setNumeroReceita(e.target.value)} 
-          fullWidth 
-          margin="normal" 
-          inputProps={{ maxLength: 19 }} 
+        <TextField
+          label="Número de Receita (19 dígitos)"
+          value={numeroReceita}
+          onChange={(e) => setNumeroReceita(e.target.value)}
+          fullWidth
+          margin="normal"
+          inputProps={{ maxLength: 19 }}
         />
 
-        <TextField 
-          label="Pin de Acesso(6 dígitos)" 
-          value={pinAcesso} 
-          onChange={(e) => setPinAcesso(e.target.value)} 
-          fullWidth 
-          margin="normal" 
-          inputProps={{ maxLength: 6 }} 
+        <TextField
+          label="Pin de Acesso(6 dígitos)"
+          value={pinAcesso}
+          onChange={(e) => setPinAcesso(e.target.value)}
+          fullWidth
+          margin="normal"
+          inputProps={{ maxLength: 6 }}
         />
 
-        <TextField 
-          label="PIN de Opção (4 dígitos)" 
-          value={pinOpcao} 
-          onChange={(e) => setPinOpcao(e.target.value)} 
-          fullWidth 
-          margin="normal" 
-          inputProps={{ maxLength: 4 }} 
+        <TextField
+          label="PIN de Opção (4 dígitos)"
+          value={pinOpcao}
+          onChange={(e) => setPinOpcao(e.target.value)}
+          fullWidth
+          margin="normal"
+          inputProps={{ maxLength: 4 }}
         />
       </Box>
 

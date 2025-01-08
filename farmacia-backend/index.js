@@ -4,8 +4,7 @@ const cors = require('cors'); // Permite requisições de diferentes origens (CO
 const router = require('./routes/senhasRoutes');
 const app = express();
 
-
-require('../farmacia-backend/scripts/cronReset');
+require('../farmacia-backend/scripts/cronReset'); // Importa o script para o reset 24h
 
 // Configuração do cliente PostgreSQL
 const client = new Client({
@@ -16,7 +15,7 @@ const client = new Client({
   port: 5432,            
 });
 
-// Conneção WebService ///
+// Conneção WebService //
 const axios = require('axios');
 const https = require('https');
 

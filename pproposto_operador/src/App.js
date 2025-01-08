@@ -35,7 +35,6 @@ function App() {
         <Header isAuthenticated={isAuthenticated} onLogout={handleLogout} />
         <Container component="main" maxWidth="md" className="main-container">
           <Routes>
-            {/* Rota Inicial */}
             <Route 
               path="/" 
               element={
