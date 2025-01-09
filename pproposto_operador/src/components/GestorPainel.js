@@ -54,7 +54,7 @@ const GestorPainel = ({ isAuthenticated, role }) => {
       setMensagem('Consumível solicitado com sucesso!');
     } catch (error) {
       console.error('Erro ao solicitar consumíveis:', error.message || error);
-      setErro('Erro ao buscar os consumíveis. Tente novamente.');
+      setErro('Erro ao procurar os consumíveis. Tente novamente.');
     }
   };
 

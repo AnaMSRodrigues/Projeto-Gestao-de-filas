@@ -17,7 +17,7 @@ const client = new Client({
 
 // Conneção WebService //
 const axios = require('axios');
-
+app.use(cors());
 
 // Endpoint para consultar medicamentos
 app.get('/api/Stock', async (req, res) => {
