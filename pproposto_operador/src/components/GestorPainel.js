@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Box, Typography, TextField, Button, Grid, Paper, List, ListItem, ListItemText, Divider, Alert } from '@mui/material';
+
+import { Box, Typography, TextField, Button, Paper, List, ListItem, ListItemText, Divider, Alert } from '@mui/material';
 import Footer from './footer';
 import Papa from 'papaparse'; // Biblioteca para importar ficheiros CSV
 import './css/gestorPainel.css';
@@ -28,13 +29,15 @@ const GestorPainel = ({ isAuthenticated, role }) => {
       setErro('Por favor, insira um horário válido.');
     }
   };
+  
   // Função para alterar horários
-  const handleAlterarHorario = (index, novoValor) => {
-    const horariosAtualizados = [...horarios];
-    horariosAtualizados[index] = novoValor;
-    setHorarios(horariosAtualizados);
-    setMensagem('Horário alterado com sucesso!');
-  };
+  // const handleAlterarHorario = (index, novoValor) => {
+  //   const horariosAtualizados = [...horarios];
+  //   horariosAtualizados[index] = novoValor;
+  //   setHorarios(horariosAtualizados);
+  //   setMensagem('Horário alterado com sucesso!');
+  // };
+
   // Função para manipular a solicitação de consumível
   const handleSolicitarConsumivel = async () => {
     try {

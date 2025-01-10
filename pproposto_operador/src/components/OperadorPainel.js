@@ -3,7 +3,7 @@ import { Box, Button, Typography, List, ListItem, ListItemText, Divider, Grid, P
 import './css/operadorPainel.css';
 import { alteraPendente, chamarPrimeiraSenha, fetchSenhasPorEstado, finalizarSenha } from '../services/apiService';
 import { Link } from 'react-router-dom';
-import { isAuthenticated, role } from '../App';
+
 
 const OperadorPainel = ({ isAuthenticated, role }) => {
   const [senhas, setSenhas] = useState({
@@ -146,6 +146,16 @@ const OperadorPainel = ({ isAuthenticated, role }) => {
       setMensagem('Erro ao finalizar a senha.');
     }
   };
+
+  // if (!isAuthenticated || role !== 'operador') {
+  //   return (
+  //     <Box className="access-denied">
+  //       <Typography variant="h6" color="error">
+  //         Acesso negado. Você não tem permissão para acessar este painel.
+  //       </Typography>
+  //     </Box>
+  //   );
+  // }
 
   return (
     <Box className="painel-operador">

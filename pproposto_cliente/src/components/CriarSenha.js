@@ -1,6 +1,16 @@
 import React, { useState } from 'react';
-import { Button, Alert, Box, FormControl, InputLabel, Select, MenuItem, Typography, TextField } from '@mui/material';
-import { adicionarSenha, atualizarEstadoSenhaAuto } from '../services/apiService';
+import {
+  Button,
+  Alert,
+  Box,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Typography,
+  TextField,
+} from '@mui/material';
+import { adicionarSenha, atualizarEstadoSenhaAuto, validarCodigoAgendado } from '../services/apiService';
 import './css/CriarSenha.css';
 
 const CriarSenha = () => {
@@ -24,11 +34,11 @@ const CriarSenha = () => {
       }
 
       const novaSenha = {
-        tipo: idServico === 3 ? 'agendado' : tipo, // Define tipo como "agendado" para o serviço 3
-        estado: 'em espera',
-        id_servico: idServico,
-        codigo: idServico === 3 ? codigo.trim() : null, // Inclui o código apenas para "Atendimento agendado"
-      };
+        tipo, 
+        estado: 'em espera', 
+        id_servico: idServico, 
+        codigo: idServico === 3 ? codigo.trim() : null, 
+      };      
 
       const resposta = await adicionarSenha(novaSenha);
       setMensagem(`Senha criada com sucesso: ${resposta.senha.id_senha}`);
@@ -40,6 +50,69 @@ const CriarSenha = () => {
     }
   };
 
+  const validarSenhaAgendada = async () => {
+    try {
+      if (!codigo.trim()) {
+        setErro('Por favor, insira o código de agendamento.');
+        return;
+      }
+  
+      // Valida o código de agendamento e obtém os dados da senha
+      const resposta = await validarCodigoAgendado(codigo);
+  
+      if (!resposta || !resposta.senha) {
+        setErro('Código de agendamento inválido ou senha não encontrada.');
+        return;
+      }
+  
+      const { data_senha, estado } = resposta.senha; // Data/hora e estado da senha
+  
+      // Valida o estado da senha primeiro
+      if (estado !== 'pausado') {
+        if (estado === 'em espera') {
+          setMensagem('Senha já está no estado "em espera".');
+        } else {
+          setErro('A senha não está no estado válido para validação.');
+        }
+        return; // Impede que prossiga para a validação de horário
+      }
+  
+      // Validação de hora e data
+      const horaAgendada = new Date(data_senha);
+      const horaAtual = new Date();
+  
+      // Calcula intervalo de 15 minutos antes e depois
+      const intervaloInicio = new Date(horaAgendada.getTime() - 15 * 60000); // 15 minutos antes
+      const intervaloFim = new Date(horaAgendada.getTime() + 15 * 60000); // 15 minutos depois
+  
+      // Verifica se a hora atual está dentro do intervalo permitido
+      if (horaAtual < intervaloInicio || horaAtual > intervaloFim) {
+        setErro(
+          `A senha só pode ser validada entre ${intervaloInicio.toLocaleTimeString('pt-BR', {
+            hour: '2-digit',
+            minute: '2-digit',
+          })} e ${intervaloFim.toLocaleTimeString('pt-BR', {
+            hour: '2-digit',
+            minute: '2-digit',
+          })}.`
+        );
+        setMensagem('');
+        return;
+      }
+  
+      // Atualiza estado para "em espera"
+      const atualizacao = await atualizarEstadoSenhaAuto(codigo);
+      setMensagem(
+        `Senha validada e atualizada com sucesso. Nova senha: ${atualizacao.senha.id_senha}`
+      );
+      setErro('');
+    } catch (error) {
+      console.error('Erro ao validar senha agendada:', error.response || error.message);
+      const mensagemErro = error.response?.data?.error || 'Erro ao validar a senha agendada.';
+      setErro(mensagemErro);
+    }
+  };
+  
   return (
     <Box className="criar-senha-container">
       <Box className="caixa-servico">
@@ -70,26 +143,18 @@ const CriarSenha = () => {
             fullWidth
             label="Código de Agendamento"
             value={codigo}
-            onChange={(e) => { setCodigo(e.target.value) }}
+            onChange={(e) => {
+              setCodigo(e.target.value);
+            }}
             className="input-codigo"
           />
           <Button
             variant="contained"
-            onClick={async () => {
-              try {
-                const resposta = await atualizarEstadoSenhaAuto(codigo);
-                setMensagem(`A sua senha é o número: ${resposta.senha.id_senha}`);
-                setErro('');
-              } catch (error) {
-                console.error('Erro ao selecionar senha agendada:', error.response || error.message);
-                setErro(error.response?.data?.error || 'Erro ao selecionar a senha agendada.');
-                setMensagem('');
-              }
-            }}
+            onClick={validarSenhaAgendada}
             className="botao-criar-senha"
             disabled={!codigo.trim()}
           >
-            Selecionar Senha Agendada
+            Validar Senha Agendada
           </Button>
         </Box>
       )}

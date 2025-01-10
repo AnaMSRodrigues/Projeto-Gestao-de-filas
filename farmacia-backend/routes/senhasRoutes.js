@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
+
 const { Client } = require('pg');
 
 // Configuração da conexão a base de dados PostgreSQL
@@ -14,7 +15,6 @@ const client = new Client({
 
 // Conecta à BD
 client.connect();
-
 
 // Rota para obter todas as senhas
 router.get('/senha', (req, res) => {
@@ -90,14 +90,17 @@ router.post('/criasenha', async (req, res) => {
 // Rota para criar uma nova senhaAgendada , com código de acesso associado
 // Estado da senha é pausado por default
 router.post('/criasenhaAgendada', async (req, res) => {
-  const { tipo, id_servico, codigo_acesso } = req.body; // Recebe o tipo de senha, id_servico e codigo de acesso
+  const { tipo, id_servico, codigo_acesso, data, horario } = req.body; // Recebe data e horário separados
 
-  // Verifica se o tipo, id_servico e codigo de acesso foram enviados
-  if (!tipo || !id_servico || !codigo_acesso) {
-    return res.status(400).json({ error: 'O tipo de senha , id_servico e codigo_acesso são obrigatórios' });
+  // Verifica se os campos obrigatórios foram enviados
+  if (!tipo || !id_servico || !codigo_acesso || !data || !horario) {
+    return res.status(400).json({ error: 'O tipo de senha, id_servico, codigo_acesso, data e horário são obrigatórios' });
   }
 
   try {
+    // Combina a data e o horário em um timestamp válido
+    const data_ini = new Date(`${data}T${horario}`).toISOString(); // Constrói o timestamp no formato ISO 8601
+
     // Obtém o maior id_utente atual
     const maxIdUtenteQuery = 'SELECT COALESCE(MAX(id_utente), 0) AS max_id FROM utente';
     const maxIdResult = await client.query(maxIdUtenteQuery);
@@ -107,13 +110,13 @@ router.post('/criasenhaAgendada', async (req, res) => {
     const novoUtenteQuery = 'INSERT INTO utente (id_utente) VALUES ($1)';
     await client.query(novoUtenteQuery, [novoIdUtente]);
 
-    // Cria a nova senha
+    // Cria a nova senha com data_ini
     const novaSenhaQuery = `
-      INSERT INTO senha (tipo, estado, id_utente, id_servico, codigo_acesso) 
-      VALUES ($1, $2, $3, $4, $5) 
+      INSERT INTO senha (tipo, estado, id_utente, id_servico, codigo_acesso, data_senha) 
+      VALUES ($1, $2, $3, $4, $5, $6) 
       RETURNING *;
     `;
-    const valoresSenha = [tipo, 'pausado', novoIdUtente, id_servico, codigo_acesso];
+    const valoresSenha = [tipo, 'pausado', novoIdUtente, id_servico, codigo_acesso, data_ini];
     const senhaResult = await client.query(novaSenhaQuery, valoresSenha);
 
     // Devolve ao cliente os detalhes da senha criada
@@ -126,6 +129,7 @@ router.post('/criasenhaAgendada', async (req, res) => {
     res.status(500).json({ error: 'Erro ao criar a senha' });
   }
 });
+
 
 // Rota para atualizar o estado de uma senha pelo ID
 router.put('/senha/:id_senha', (req, res) => {
@@ -574,6 +578,32 @@ router.get('/finalizarSenha/:idSenha', async (req, res) => {
     res.status(500).json({ error: 'Erro ao finalizar a senha' });
   }
 });
+
+//Rota para validar codigo de acesso
+router.post('validaCodigo/:codigo', async (req, res) => {
+  const { codigo } = req.params;
+
+  if (!codigo) {
+    return res.status(400).json({ error: 'Código de agendamento é obrigatório.' });
+  }
+
+  try {
+    // Buscar a senha correspondente ao código
+    const query = 'SELECT * FROM senha WHERE codigo_acesso = $1';
+    const result = await client.query(query, [codigo]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Senha não encontrada para o código fornecido.' });
+    }
+
+    const senha = result.rows[0];
+    res.status(200).json({ senha });
+  } catch (error) {
+    console.error('Erro ao validar o código de agendamento:', error);
+    res.status(500).json({ error: 'Erro ao validar o código de agendamento.' });
+  }
+});
+
 
 // Exporta as rotas
 module.exports = router;

@@ -13,3 +13,13 @@ export const atualizarEstadoSenhaAuto = async (codigo) => {
   const response = await axios.post(`${API_URL}/alteraEstadoSenha/${codigo}`);
   return response.data;
 };
+// Método para validar o código de agendamento
+export const validarCodigoAgendado = async (codigo) => {
+  try {
+    const response = await axios.post(`${API_URL}/validaCodigo/${codigo}`);
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao validar o código de agendamento:', error);
+    throw error;
+  }
+};
