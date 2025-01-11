@@ -28,6 +28,7 @@ const OperadorPainel = ({ isAuthenticated, role }) => {
   const [mensagem, setMensagem] = useState('');
   const [senhaAtual, setSenhaAtual] = useState(null);
 
+  // Função que conta e agrupa senhas por estado
   const fetchAllSenhas = async () => {
     const estados = ['atendida', 'em espera', 'pendente', 'em atendimento', 'cancelada', 'pausada'];
     const novasSenhas = {};
@@ -37,11 +38,11 @@ const OperadorPainel = ({ isAuthenticated, role }) => {
       console.log(`Senhas para o estado ${estado}:`, senhasPorEstado);
       novasSenhas[estado] = senhasPorEstado;
     }
-    setSenhas(novasSenhas); // Atualiza o estado com as senhas filtradas
-    console.log('Senhas atualizadas:', novasSenhas);
-    atualizarContadores(novasSenhas); // Atualiza os contadores 
+    setSenhas(novasSenhas);
+    atualizarContadores(novasSenhas);
   };
 
+  // Função que atualiza os contadores das senhas , por estado
   const atualizarContadores = (novasSenhas) => {
     const atendidas = novasSenhas['atendida'] ? novasSenhas['atendida'].length : 0;
     const emEspera = novasSenhas['em espera'] ? novasSenhas['em espera'].length : 0;
@@ -61,6 +62,7 @@ const OperadorPainel = ({ isAuthenticated, role }) => {
     });
   };
 
+  // Função que atribui a cor consoante o estado da senha
   const getClassForEstado = (estado) => {
     switch (estado) {
       case 'atendida':
@@ -80,20 +82,24 @@ const OperadorPainel = ({ isAuthenticated, role }) => {
     }
   }
 
-  // Apenas carrega as senhas uma vez ao iniciar o componente
+  // Carrega as senhas uma vez ao iniciar o componente
   useEffect(() => {
-    fetchAllSenhas();
+    const atualizarSenhasEContadores = async () => {
+      await fetchAllSenhas();
+    };
+
+    atualizarSenhasEContadores();
   }, []);
 
+  // Função que gere a alteração do estado da senha para pendente 
   const handlePendente = async (id) => {
     try {
       const response = await alteraPendente(id);
-      console.log(response);
 
       if (response && response.senha) {
         setMensagem(`Senha ${id} marcada como "Não Compareceu".`);
-        setSenhaAtual(null); // Limpa a senha atual do estado
-        await fetchAllSenhas(); // Atualiza a lista de senhas
+        setSenhaAtual(null);
+        await fetchAllSenhas();
       } else {
         setMensagem(`Erro ao marcar a senha ${id} como "Não Compareceu".`);
       }
@@ -103,39 +109,40 @@ const OperadorPainel = ({ isAuthenticated, role }) => {
     }
   };
 
+  // Função que gere a chamada da primeira senha na fila de espera
   const handleChamarPrimeiraSenha = async () => {
     try {
       const response = await chamarPrimeiraSenha();
-      console.log('Resposta recebida:', response);  // Adicione este log para inspecionar a resposta
-
-      if (response && response.chamada) {
+      if (response && response.senha && response.chamada) {
         setSenhaAtual({
           id: response.senha.id_senha,
           tipo: response.senha.tipo,
           atendimento: response.chamada.atendimento,
-          horaInicio: response.chamada.hora_ini, // Hora exata do backend
+          horaInicio: response.chamada.hora_ini,
         });
-        setMensagem('');
+        setMensagem(`Senha chamada com sucesso: ${response.senha.id_senha}`);
       } else {
         setMensagem('Nenhuma senha disponível para chamada.');
       }
+      // Atualiza a lista de senhas após a chamada
+      await fetchAllSenhas();
     } catch (error) {
-      console.error('Erro ao chamar a primeira senha:', error);
-      setMensagem('Erro ao chamar a senha.');
+      console.error('Erro ao chamar a próxima senha:', error);
+      setMensagem('Erro ao chamar a próxima senha.');
     }
   };
 
+  // Função que gere o término de atendimento de uma senha
   const handleFinalizarSenha = async (id) => {
     try {
-      const response = await finalizarSenha(id); // Chama o endpoint para finalizar a senha
+      const response = await finalizarSenha(id);
       if (response && response.senha && response.chamada) {
-        // Atualiza os dados da senha e da chamada com os novos valores
         setSenhaAtual({
           id: response.senha.id_senha,
           tipo: response.senha.tipo,
           atendimento: response.chamada.atendimento,
-          horaInicio: response.chamada.hora_ini, // Hora de início da chamada
-          horaFim: response.chamada.hora_fim,   // Hora de fim da chamada
+          horaInicio: response.chamada.hora_ini,
+          horaFim: response.chamada.hora_fim,
         });
         setMensagem('Senha finalizada com sucesso.');
       } else {
@@ -317,6 +324,7 @@ const OperadorPainel = ({ isAuthenticated, role }) => {
           <Typography variant="body1">Nenhuma senha disponível</Typography>
         )}
       </List>
+      
       {isAuthenticated && role === 'gestor' && (
         <Button
           variant="contained"

@@ -1,4 +1,3 @@
-/* Contêiner principal */
 .criar-senha-container {
   display: flex;
   flex-direction: column; 
@@ -20,7 +19,7 @@
   background-color: #ffffff;
   border-radius: 16px;
   padding: 2rem;
-  margin-bottom: 2rem; /* Separação clara entre as duas caixas */
+  margin-bottom: 2rem; 
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1); 
   display: flex;
   flex-direction: column;

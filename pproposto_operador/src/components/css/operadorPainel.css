@@ -1,108 +1,95 @@
-/* Estilo geral do painel */
 .painel-operador {
   padding: 24px;
 }
 
-/* Estilo para a mensagem exibida */
 .mensagem {
   margin-bottom: 16px;
 }
 
-/* Estilo para o botão de chamar a primeira senha */
 .botao-chamar {
   margin-bottom: 24px;
-  margin-top: 16px; /* Ajuste para o botão de chamar a primeira senha */
-  display: inline-block; /* Certifica-se de que o botão é exibido corretamente */
+  margin-top: 16px; 
+  display: inline-block; 
   min-width: 120px;
 }
 
-/* Grid com os contadores */
 .grid-container {
   margin-bottom: 24px;
   display: flex;
-  flex-wrap: wrap; /* Permite que os itens quebrem para uma nova linha, caso necessário */
+  flex-wrap: wrap; 
   justify-content: space-between;
 }
 
-/* Contadores individuais */
 .contador-paper {
   padding: 16px;
   text-align: center;
   min-width: 120px;
   min-height: 100px;
-  margin: 8px 0; /* Adicionando margens para garantir espaçamento adequado */
+  margin: 8px 0; 
 }
 
-/* Lista de senhas */
 .lista-senhas {
   width: 100%;
   max-width: 600px;
   background-color: var(--mui-background-paper);
-  margin-top: 24px; /* Espaçamento superior para a lista */
+  margin-top: 24px;
 }
 
-/* Botões de atender e não compareceu */
 .botao-atender {
   margin-right: 16px;
-  margin-top: 8px; /* Adicionando um pouco de espaçamento superior */
-  display: inline-block; /* Certifica-se de que o botão é exibido corretamente */
-  min-width: 120px; /* Garantir que o botão tenha largura suficiente */
+  margin-top: 8px; 
+  display: inline-block; 
+  min-width: 120px; 
 }
 
-/* Botão de "Não Compareceu" */
 .botao-pendente {
   margin-left: 8px;
   margin-top: 8px;
-  display: inline-block; /* Certifica-se de que o botão é exibido corretamente */
+  display: inline-block;
   min-width: 120px;
 }
 
-/* Garantir que todos os botões tenham a mesma largura mínima */
 .botao-atender,
 .botao-pendente,
 .botao-chamar {
   min-width: 120px;
 }
 
-/* Fazer os botões de atender e pendente se exibirem em uma nova linha */
 .botao-atender,
 .botao-pendente {
   display: block;
-  margin: 8px auto; /* Centraliza os botões */
-  width: 100%; /* Se necessário, fazer com que os botões ocupem toda a largura disponível */
+  margin: 8px auto;
+  width: 100%; 
 }
 
-/* Estilo para os itens de senhas com cores de fundo diferentes por tipo */
 .MuiListItem-root {
   transition: background-color 0.3s ease;
 }
 
-/* Para cada tipo de senha, uma cor de fundo diferente */
 .MuiListItem-root.atendida {
-  background-color: #4caf50; /* Verde */
+  background-color: #4caf50;
 }
 
 .MuiListItem-root.em-espera {
-  background-color: #ff9800; /* Laranja */
+  background-color: #ff9800; 
 }
 
 .MuiListItem-root.pendente {
-  background-color: #f44336; /* Vermelho */
+  background-color: #f44336;
 }
 
 .MuiListItem-root.em-atendimento {
-  background-color: #2196f3; /* Azul */
+  background-color: #2196f3; 
 }
 
 .MuiListItem-root.cancelada {
-  background-color: #9e9e9e; /* Cinza */
+  background-color: #9e9e9e; 
 }
 
 .MuiListItem-root.pausada {
-  background-color: #9c27b0; /* Roxo */
+  background-color: #9c27b0; 
 }
 
-/* Estilos para o painel de atendimento atual */
 .painel-atendimento {
   margin-top: 32px;
   padding: 16px;
@@ -120,24 +107,22 @@
   margin: 4px 0;
 }
 
-/* Estilos para os links */
 .MuiButton-root {
   text-decoration: none;
 }
 
-/* Ajuste de margens e espaçamento para os botões em tela pequena */
 @media (max-width: 600px) {
   .botao-atender, 
   .botao-pendente, 
   .botao-chamar {
-    min-width: 100%; /* Faz os botões ocuparem toda a largura disponível em telas pequenas */
+    min-width: 100%;
   }
   .grid-container {
-    flex-direction: column; /* Alinha os contadores verticalmente */
-    align-items: center; /* Centraliza os itens dentro do grid */
+    flex-direction: column; 
+    align-items: center; 
   }
   .contador-paper {
-    width: 100%; /* Garante que os contadores ocupem toda a largura disponível */
-    margin: 8px 0; /* Adiciona espaçamento entre os contadores */
+    width: 100%;
+    margin: 8px 0; 
   }
 }

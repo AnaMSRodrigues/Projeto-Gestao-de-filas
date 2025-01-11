@@ -1,15 +1,5 @@
 import React, { useState } from 'react';
-import {
-  Button,
-  Alert,
-  Box,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Typography,
-  TextField,
-} from '@mui/material';
+import { Button, Alert, Box, FormControl, InputLabel, Select, MenuItem, Typography, TextField, } from '@mui/material';
 import { adicionarSenha, atualizarEstadoSenhaAuto, validarCodigoAgendado } from '../services/apiService';
 import './css/CriarSenha.css';
 
@@ -19,10 +9,11 @@ const CriarSenha = () => {
   const [idServico, setIdServico] = useState('');
   const [codigo, setCodigo] = useState('');
 
+  // Função para criar uma nova senha
   const criarSenha = async (tipo) => {
     try {
       if (!idServico) {
-        setErro('Por favor, selecione um serviço antes de criar a senha.');
+        setErro('Por favor, selecione um serviço antes de adquirir a senha.');
         setMensagem('');
         return;
       }
@@ -34,11 +25,11 @@ const CriarSenha = () => {
       }
 
       const novaSenha = {
-        tipo, 
-        estado: 'em espera', 
-        id_servico: idServico, 
-        codigo: idServico === 3 ? codigo.trim() : null, 
-      };      
+        tipo,
+        estado: 'em espera',
+        id_servico: idServico,
+        codigo: idServico === 3 ? codigo.trim() : null,
+      };
 
       const resposta = await adicionarSenha(novaSenha);
       setMensagem(`Senha criada com sucesso: ${resposta.senha.id_senha}`);
@@ -50,23 +41,24 @@ const CriarSenha = () => {
     }
   };
 
+  // Função para validar uma senha agendada e coloca-la na fila de espera 
   const validarSenhaAgendada = async () => {
     try {
       if (!codigo.trim()) {
         setErro('Por favor, insira o código de agendamento.');
         return;
       }
-  
+
       // Valida o código de agendamento e obtém os dados da senha
       const resposta = await validarCodigoAgendado(codigo);
-  
+
       if (!resposta || !resposta.senha) {
         setErro('Código de agendamento inválido ou senha não encontrada.');
         return;
       }
-  
-      const { data_senha, estado } = resposta.senha; // Data/hora e estado da senha
-  
+
+      const { data_senha, estado } = resposta.senha;
+
       // Valida o estado da senha primeiro
       if (estado !== 'pausado') {
         if (estado === 'em espera') {
@@ -74,17 +66,16 @@ const CriarSenha = () => {
         } else {
           setErro('A senha não está no estado válido para validação.');
         }
-        return; // Impede que prossiga para a validação de horário
+        return;
       }
-  
-      // Validação de hora e data
+
       const horaAgendada = new Date(data_senha);
       const horaAtual = new Date();
-  
+
       // Calcula intervalo de 15 minutos antes e depois
-      const intervaloInicio = new Date(horaAgendada.getTime() - 15 * 60000); // 15 minutos antes
-      const intervaloFim = new Date(horaAgendada.getTime() + 15 * 60000); // 15 minutos depois
-  
+      const intervaloInicio = new Date(horaAgendada.getTime() - 15 * 60000);
+      const intervaloFim = new Date(horaAgendada.getTime() + 15 * 60000);
+
       // Verifica se a hora atual está dentro do intervalo permitido
       if (horaAtual < intervaloInicio || horaAtual > intervaloFim) {
         setErro(
@@ -99,7 +90,7 @@ const CriarSenha = () => {
         setMensagem('');
         return;
       }
-  
+
       // Atualiza estado para "em espera"
       const atualizacao = await atualizarEstadoSenhaAuto(codigo);
       setMensagem(
@@ -112,7 +103,7 @@ const CriarSenha = () => {
       setErro(mensagemErro);
     }
   };
-  
+
   return (
     <Box className="criar-senha-container">
       <Box className="caixa-servico">

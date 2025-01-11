@@ -1,4 +1,5 @@
-// Testes unitários de renderização do componente + verificação estado inicial 
+// Testes à renderização do componente OperadorPainel + verificação estado inicial 
+
 import { render, screen, fireEvent } from '@testing-library/react';
 import OperadorPainel from '../components/operadorPainel';
 
@@ -34,7 +35,7 @@ describe('Componente OperadorPainel', () => {
     const senhasList = container.querySelector('ul');
     expect(senhasList.children.length).toBe(0); // Lista de senhas vazia inicialmente
 
-    // Verifica se os botões estão desabilitados, se aplicável
+    // Verifica se os botões estão desabilitados
     const chamarProximaSenhaButton = screen.getByRole('button', { name: /chamar próxima senha/i });
     expect(chamarProximaSenhaButton).not.toBeDisabled();
 

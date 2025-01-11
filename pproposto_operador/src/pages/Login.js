@@ -9,7 +9,7 @@ const Login = ({ onLogin }) => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-
+// Função que gere o login e roteamento consoante perfil
 const handleLogin = () => {
   if (username === 'operador' && password === '1234') {
     sessionStorage.setItem('role', 'operador');

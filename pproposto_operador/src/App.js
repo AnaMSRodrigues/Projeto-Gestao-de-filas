@@ -6,14 +6,14 @@ import OperadorPainel from './components/operadorPainel';
 import GestorPainel from './components/gestorPainel';
 import Header from './components/header';
 import Footer from './components/footer';
-import './App.css'; 
+import './App.css';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [role, setRole] = useState(null);
 
-  
-  // Função de logout
+
+  // Função que gere o logout
   const handleLogout = () => {
     sessionStorage.removeItem('isAuthenticated');
     sessionStorage.removeItem('role');
@@ -21,7 +21,7 @@ function App() {
     setRole(null);
   };
 
-  // Verifica autenticação e tipo de utilizador ao carregar
+  // Verifica autenticação e tipo de utilizador ao carregar a página
   useEffect(() => {
     const auth = sessionStorage.getItem('isAuthenticated') === 'true';
     const userRole = sessionStorage.getItem('role');
@@ -35,8 +35,8 @@ function App() {
         <Header isAuthenticated={isAuthenticated} onLogout={handleLogout} />
         <Container component="main" maxWidth="md" className="main-container">
           <Routes>
-            <Route 
-              path="/" 
+            <Route
+              path="/"
               element={
                 isAuthenticated ? (
                   role === 'operador' ? (

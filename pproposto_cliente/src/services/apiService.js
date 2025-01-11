@@ -2,18 +2,28 @@ import axios from 'axios';
 import API_URL from '../config/apiConfig';
 
 
-// Função para adicionar uma nova senha
+// Endpoint para adicionar uma nova senha
 export const adicionarSenha = async (novaSenha) => {
-  const response = await axios.post(`${API_URL}/criasenha`, novaSenha)
-  return response.data;
+  try {
+    const response = await axios.post(`${API_URL}/criasenha`, novaSenha)
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao criar nova senha:', error);
+    throw error;
+  }
 };
 
-// Função para atualizar o estado de uma senha de forma automática
+// Endpoint para atualizar o estado de uma senha de forma automática
 export const atualizarEstadoSenhaAuto = async (codigo) => {
-  const response = await axios.post(`${API_URL}/alteraEstadoSenha/${codigo}`);
-  return response.data;
+  try {
+    const response = await axios.post(`${API_URL}/alteraEstadoSenha/${codigo}`);
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao alterar estado da senha:', error);
+    throw error;
+  }
 };
-// Método para validar o código de agendamento
+// Endpoint para validar o código de agendamento
 export const validarCodigoAgendado = async (codigo) => {
   try {
     const response = await axios.post(`${API_URL}/validaCodigo/${codigo}`);

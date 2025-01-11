@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-
 import { Box, Typography, TextField, Button, Paper, List, ListItem, ListItemText, Divider, Alert } from '@mui/material';
 import Footer from './footer';
 import Papa from 'papaparse'; // Biblioteca para importar ficheiros CSV
@@ -15,11 +14,11 @@ const GestorPainel = ({ isAuthenticated, role }) => {
   const [mensagem, setMensagem] = useState('');
   const [idPro, setIdPro] = useState('');
   const [erro, setErro] = useState('');
-  const [horariosCSV, setHorariosCSV] = useState([]); // Armazenar horários do CSV
+  const [horariosCSV, setHorariosCSV] = useState([]); 
 
   const navigate = useNavigate(); // Hook para navegar entre páginas
 
-  // Função para adicionar manualmente um novo horário
+  // Função para adicionar um novo horário
   const handleAdicionarHorario = () => {
     if (novoHorario.trim()) {
       setHorarios([...horarios, novoHorario]);
@@ -30,14 +29,6 @@ const GestorPainel = ({ isAuthenticated, role }) => {
     }
   };
   
-  // Função para alterar horários
-  // const handleAlterarHorario = (index, novoValor) => {
-  //   const horariosAtualizados = [...horarios];
-  //   horariosAtualizados[index] = novoValor;
-  //   setHorarios(horariosAtualizados);
-  //   setMensagem('Horário alterado com sucesso!');
-  // };
-
   // Função para manipular a solicitação de consumível
   const handleSolicitarConsumivel = async () => {
     try {
@@ -49,7 +40,7 @@ const GestorPainel = ({ isAuthenticated, role }) => {
       const dadosConsumiveis = await solicitaMedicamento(idPro);
 
       if (!dadosConsumiveis || dadosConsumiveis.length === 0) {
-        throw new Error("Nenhum dado foi recebido do servidor.");
+        throw new Error("Nenhum dado foi recebido do fornecedor.");
       }
 
       setConsumiveis(dadosConsumiveis); 
@@ -70,7 +61,7 @@ const GestorPainel = ({ isAuthenticated, role }) => {
       header: true, // Considera a primeira linha como cabeçalho
       skipEmptyLines: true,
       complete: (result) => {
-        const data = result.data.map((row) => row.Horario); // Assume que há uma coluna "Horario"
+        const data = result.data.map((row) => row.Horario); // Assume que há uma coluna "horario"
         if (data.length > 0) {
           setHorariosCSV([...horariosCSV, ...data]);
           setMensagem(`Foram carregados ${data.length} horários do arquivo.`);

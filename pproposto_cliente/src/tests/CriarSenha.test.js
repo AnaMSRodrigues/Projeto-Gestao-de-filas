@@ -1,6 +1,7 @@
-// Testes unitários de renderização do componente + verificação estado inicial 
+// Testes de renderização do componente CriarSenha + verificação estado inicial 
+
 import { render, screen, fireEvent } from '@testing-library/react';
-import CriarSenha from ('../components/CriarSenha')
+import CriarSenha from '../components/CriarSenha';
 
 jest.mock('../services/apiService', () => ({
   adicionarSenha: jest.fn(),
@@ -22,7 +23,7 @@ describe('Componente CriarSenha', () => {
 
     const criarSenhaButton = screen.getByRole('button', { name: /senha geral/i });
 
-    // Simula clique no botão desativado
+    // Simula acção no botão desativado
     fireEvent.click(criarSenhaButton);
 
     // Verifica se o botão está desabilitado

@@ -1,13 +1,18 @@
 import axios from 'axios';
 import API_URL from '../config/apiConfig';
 
-// Função para adicionar uma nova senha agendada
+// Endpoint para adicionar uma nova senha agendada
 export const adicionarSenhaAgendada = async (novaSenhaAgendada) => {
-  const response = await axios.post(`${API_URL}/criasenhaAgendada`, novaSenhaAgendada);
-  return response.data;
+  try {
+    const response = await axios.post(`${API_URL}/criasenhaAgendada`, novaSenhaAgendada);
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao agendar a senha:', error);
+    throw error;
+  }
 };
 
-// Função para verificar e inserir receita
+// Endpoint para verificar e inserir receita
 export const verificarReceita = async ({ n_receita, pin_acesso, pin_opcao }) => {
   try {
     const resposta = await axios.post(`${API_URL}/insereReceita`, {
@@ -15,9 +20,32 @@ export const verificarReceita = async ({ n_receita, pin_acesso, pin_opcao }) => 
       pin_acesso,
       pin_opcao
     });
-    return resposta.data; 
+    return resposta.data;
   } catch (error) {
     console.error('Erro ao verificar a receita:', error);
-    throw error; 
+    throw error;
   }
 };
+
+// Endpoint para verificar se existe senha agendada em determinada data e hora 
+export const verificarSenhaExistente = async ({ data, horario }) => {
+  try {
+    const response = await axios.post(`${API_URL}/verificarSenhaExistente`, { data, horario });
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao verificar a senha:', error);
+    throw error;
+  }
+};
+
+// Endpoint que solicita disponibilidade de medicamento por dados de receita - conexão WebService
+export const solicitaMedicamentoPorReceita = async (n_receita, cod_acesso, pin_opcao) => {
+  try {
+    const response = await axios.get(`${API_URL}/api/Receitas?n_rec=${n_receita}&pin_ace=${cod_acesso}&pin_op=${pin_opcao}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Erro ao verificar receita: ${error.message}`);
+    throw error;
+  }
+};
+

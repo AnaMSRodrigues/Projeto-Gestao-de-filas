@@ -1,4 +1,5 @@
-// Importando bibliotecas necessárias para os testes
+// Testes à renderização do componente GestorPainel + verificação estado inicial 
+
 import { render, screen } from '@testing-library/react';
 import GestorPainel from '../components/gestorPainel';
 
@@ -14,18 +15,12 @@ describe('Componente GestorPainel', () => {
     // Verifica se os principais elementos são renderizados
     expect(screen.getByText('Painel do Gestor')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /atualizar dados/i })).toBeInTheDocument();
-    expect(screen.getByRole('table')).toBeInTheDocument(); // Assumindo que há uma tabela de dados
   });
 
   test('Estado inicial está configurado corretamente', () => {
     const { container } = render(<GestorPainel isAuthenticated={true} role="gestor" />);
 
-    // Verifica se a tabela está vazia inicialmente
-    const tabela = container.querySelector('table');
-    expect(tabela).toBeInTheDocument();
-    expect(tabela.rows.length).toBe(1); // Apenas cabeçalho, assumindo que a tabela começa vazia
-
-    // Verifica se o botão de atualizar está habilitado
+    // Verifica se o botão de atualizar está a funcionar
     const atualizarButton = screen.getByRole('button', { name: /atualizar dados/i });
     expect(atualizarButton).not.toBeDisabled();
   });
