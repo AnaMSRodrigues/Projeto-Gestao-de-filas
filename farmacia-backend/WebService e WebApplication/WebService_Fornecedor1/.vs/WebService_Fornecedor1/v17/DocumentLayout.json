@@ -1,0 +1,37 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Goncalo\\Universidade\\3\u00BAAno\\1\u00BA Semestre\\Projeto 50-10\\WebService_Fornecedor1\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{C14B3B61-8211-4676-955C-4438A43506B6}|WebService_Fornecedor1\\WebService_Fornecedor1.csproj|c:\\goncalo\\universidade\\3\u00BAano\\1\u00BA semestre\\projeto 50-10\\webservice_fornecedor1\\webservice_fornecedor1\\controllers\\stockcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C14B3B61-8211-4676-955C-4438A43506B6}|WebService_Fornecedor1\\WebService_Fornecedor1.csproj|solutionrelative:webservice_fornecedor1\\controllers\\stockcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "StockController.cs",
+              "DocumentMoniker": "C:\\Goncalo\\Universidade\\3\u00BAAno\\1\u00BA Semestre\\Projeto 50-10\\WebService_Fornecedor1\\WebService_Fornecedor1\\Controllers\\StockController.cs",
+              "RelativeDocumentMoniker": "WebService_Fornecedor1\\Controllers\\StockController.cs",
+              "ToolTip": "C:\\Goncalo\\Universidade\\3\u00BAAno\\1\u00BA Semestre\\Projeto 50-10\\WebService_Fornecedor1\\WebService_Fornecedor1\\Controllers\\StockController.cs",
+              "RelativeToolTip": "WebService_Fornecedor1\\Controllers\\StockController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-12-19T14:48:56.754Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

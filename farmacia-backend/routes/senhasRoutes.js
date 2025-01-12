@@ -361,20 +361,22 @@ router.post('/chamarPrimeiraSenhaAtualizada', async (req, res) => {
         novoAtendimento = 2;
       }
 
-      await client.query(`
+      const chamadaResult = await client.query(`
         UPDATE chamada 
         SET atendimento = $1
         WHERE id_chamada = $2
+        RETURNING hora_ini, atendimento;
       `, [novoAtendimento, senha.id_chamada]);
 
       return res.status(200).json({
         message: 'Atendimento atualizado com sucesso.',
         senha,
-        atendimento: novoAtendimento,
+        atendimento: novoAtendimento, 
+        chamada: chamadaResult.rows[0],
       });
     }
 
-    // Se não houver chamada associada, registra uma nova chamada
+    // Se não houver chamada associada, regista uma nova chamada
     const horaIni = new Date().toISOString();
     const idOperador = 1; // Define id_operador como 1 até lógica do balcão ser implementada
     const atendimento = 1;

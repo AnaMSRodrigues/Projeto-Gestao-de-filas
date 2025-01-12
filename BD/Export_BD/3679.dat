@@ -1,0 +1,5 @@
+INSERT INTO public.balcao VALUES (1);
+INSERT INTO public.balcao VALUES (2);
+INSERT INTO public.balcao VALUES (3);
+
+
