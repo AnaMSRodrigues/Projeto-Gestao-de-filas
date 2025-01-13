@@ -57,13 +57,13 @@ app.get('/api/Receitas', async (req, res) => {
   }
 
   try {
-    const response = await axios.get(`http://172.20.10.2/api/Receitas?n_rec=${n_receita}&pin_ace=${cod_acesso}&pin_op=${pin_opcao}`);
+    const response = await axios.get(`http://172.20.10.2:81/api/Receitas`, { params: { numero_rec: n_receita, pin_ace: cod_acesso, pin_op: pin_opcao },
+});
 
     // Transformar a resposta para corresponder ao formato esperado no frontend
     const data = response.data.map((item) => ({
-      id: item.id_produto,
+      id: item.id_pro,
       nome: item.nome_produto,
-      disponibilidade: item.disponibilidade,
       data: item.data,
     }));
     console.log('Dados transformados:', data);

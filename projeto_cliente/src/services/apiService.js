@@ -41,11 +41,15 @@ export const verificarSenhaExistente = async ({ data, horario }) => {
 // Endpoint que solicita disponibilidade de medicamento por dados de receita - conexão WebService
 export const solicitaMedicamentoPorReceita = async (n_receita, cod_acesso, pin_opcao) => {
   try {
-    const response = await axios.get(`${API_URL}/api/Receitas?n_rec=${n_receita}&pin_ace=${cod_acesso}&pin_op=${pin_opcao}`);
+    const response = await axios.get(`${API_URL}/api/Receitas`, {
+      params: { n_receita, cod_acesso, pin_opcao },
+    });
+    console.log('Response data:', response.data);
     return response.data;
   } catch (error) {
     console.error(`Erro ao verificar receita: ${error.message}`);
     throw error;
   }
 };
+
 

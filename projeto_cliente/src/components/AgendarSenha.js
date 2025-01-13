@@ -129,52 +129,57 @@ const AgendarSenha = () => {
       setMensagem('');
     }
   };
+  
   const validarReceitaEPesquisarMedicamento = async () => {
     try {
       if (numeroReceita.length !== 19 || pinAcesso.length !== 6 || pinOpcao.length !== 4) {
         setErro('Verifique os campos da receita.');
         return;
       }
-
-      // Validar a receita
-      const respostaReceita = await verificarReceita({
-        n_receita: numeroReceita,
-        pin_acesso: pinAcesso,
-        pin_opcao: pinOpcao,
-      });
-
-      if (!respostaReceita || !respostaReceita.sucesso) {
-        setErro('Receita não encontrada ou os PINs estão incorretos.');
-        return;
-      }
-
-      // Consultar o endpoint solicitaMedicamentoPorReceita
+  
       const respostaMedicamento = await solicitaMedicamentoPorReceita(
         numeroReceita,
         pinAcesso,
         pinOpcao
       );
-
-      if (!respostaMedicamento || !respostaMedicamento.id_produto) {
+  
+      console.log('Resposta recebida do backend:', respostaMedicamento);
+  
+      // Verificar se o array não está vazio
+      if (!respostaMedicamento || respostaMedicamento.length === 0) {
+        setErro('Nenhum medicamento encontrado.');
+        return;
+      }
+  
+      // Acessar o primeiro item do array
+      const medicamento = respostaMedicamento[0];
+  
+      if (!medicamento.id) {
         setErro('Erro ao obter informações do medicamento.');
         return;
       }
-
+  
       // Exibir informações do medicamento
       setMedicamentoInfo({
-        id_produto: respostaMedicamento.id_produto,
-        nome: respostaMedicamento.nome,
-        data: respostaMedicamento.data,
+        nome: medicamento.nome,
+        data: medicamento.data,
       });
-
+  
       setErro('');
     } catch (error) {
-      console.error('Erro ao validar a receita e buscar o medicamento:', error);
-      setErro('Ocorreu um erro ao processar a solicitação. Tente novamente.');
+      console.error('Erro ao buscar o medicamento:', error);
+  
+      if (error.response) {
+        setErro(error.response.data?.error || 'Erro no servidor.');
+      } else if (error.request) {
+        setErro('Não foi possível conectar ao servidor. Tente novamente.');
+      } else {
+        setErro('Ocorreu um erro inesperado. Tente novamente.');
+      }
+  
       setMedicamentoInfo(null);
     }
   };
-
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ptBR}>
@@ -285,9 +290,8 @@ const AgendarSenha = () => {
             <Typography variant="h6" gutterBottom>
               Informações do Medicamento:
             </Typography>
-            <Typography>ID Produto: {medicamentoInfo.id_produto}</Typography>
             <Typography>Nome: {medicamentoInfo.nome}</Typography>
-            <Typography>Data: {medicamentoInfo.data}</Typography>
+            <Typography>Agende a sua senha a partir de : {medicamentoInfo.data}</Typography>
           </Box>
         )}
       </Box>
